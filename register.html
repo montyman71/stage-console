@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AAFL Registration, Flights & Purse Hub</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans p-6">
+
+  <div class="max-w-7xl mx-auto space-y-6">
+
+    <!-- TOP BAR -->
+    <div class="flex flex-wrap justify-between items-center bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-xl gap-4">
+      <div>
+        <div class="flex items-center gap-3">
+          <span id="syncDot" class="w-3 h-3 rounded-full bg-amber-500 animate-pulse"></span>
+          <h1 id="tournamentHeading" class="text-xl font-black text-white uppercase tracking-wider">SYNCING TOURNAMENT...</h1>
+        </div>
+        <p class="text-xs text-slate-400 mt-0.5">AAFL Central Registration Desk & Dynamic Purse Engine</p>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <a href="index.html" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-black text-white transition">
+          Go to Stage Console →
+        </a>
+        <button onclick="openJumbotron()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 rounded-lg text-xs font-black text-slate-950 transition">
+          Open Jumbotron ↗
+        </button>
+      </div>
+    </div>
+
+    <!-- VENUE, DATE & FLIGHT SCHEDULE -->
+    <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl shadow-xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+        <h2 class="text-xs font-black uppercase text-amber-400 tracking-widest">📍 Venue & Flight Schedule</h2>
+        <button onclick="saveEventSettings()" class="text-xs bg-blue-600 hover:bg-blue-500 px-3 py-1.5 rounded font-bold transition">Save Schedule</button>
+      </div>
+
+      <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
+        <div class="col-span-2">
+          <label class="text-[11px] font-bold uppercase text-slate-400 block mb-1">Lake / Body of Water</label>
+          <input type="text" id="lakeInput" value="Lake Fork" placeholder="Lake Fork, TX" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white font-bold text-sm focus:border-blue-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="text-[11px] font-bold uppercase text-slate-400 block mb-1">Event Date</label>
+          <input type="date" id="dateInput" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="text-[11px] font-bold uppercase text-slate-400 block mb-1">Flight 1 Launch</label>
+          <input type="time" id="launchTimeInput" value="06:30" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm font-mono focus:border-blue-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="text-[11px] font-bold uppercase text-slate-400 block mb-1">Flight 1 Weigh-In</label>
+          <input type="time" id="weighinTimeInput" value="15:00" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm font-mono focus:border-blue-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="text-[11px] font-bold uppercase text-slate-400 block mb-1">Boats / Flight</label>
+          <input type="number" id="boatsPerFlightInput" value="25" min="5" max="100" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm font-mono focus:border-blue-500 focus:outline-none" />
+        </div>
+      </div>
+    </div>
+
+    <!-- PURSE SUMMARY DASHBOARD -->
+    <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl shadow-xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+        <h2 class="text-xs font-black uppercase text-amber-400 tracking-widest">⚙️ Fee Parameters & Real-Time Purse</h2>
+        <span class="text-[11px] text-slate-400">Syncs dynamically with registered field</span>
+      </div>
+
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div>
+          <label class="text-[11px] font-bold uppercase text-slate-400 block mb-1">Entry Fee ($ / Boat)</label>
+          <input type="number" id="inputEntryFee" value="150" step="5" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white font-mono font-bold text-sm focus:border-blue-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="text-[11px] font-bold uppercase text-slate-400 block mb-1">Big Bass Fee ($ / Boat)</label>
+          <input type="number" id="inputBbFee" value="20" step="5" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white font-mono font-bold text-sm focus:border-blue-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="text-[11px] font-bold uppercase text-slate-400 block mb-1">House Cut (%)</label>
+          <input type="number" id="inputHouseCut" value="10" min="0" max="100" step="1" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white font-mono font-bold text-sm focus:border-blue-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="text-[11px] font-bold uppercase text-slate-400 block mb-1">Places Paid Override</label>
+          <select id="inputPlacesPaid" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white font-mono font-bold text-xs focus:border-blue-500 focus:outline-none">
+            <option value="auto">Auto (Official AAFL Scale)</option>
+            <option value="1">Top 1 Spot (100%)</option>
+            <option value="2">Top 2 Spots (65 / 35)</option>
+            <option value="3">Top 3 Spots (50 / 30 / 20)</option>
+            <option value="4">Top 4 Spots (45 / 28 / 17 / 10)</option>
+            <option value="5">Top 5 Spots (40 / 25 / 16 / 11 / 8)</option>
+            <option value="7">Top 7 Spots</option>
+            <option value="10">Top 10 Spots</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-3 pt-2">
+        <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg">
+          <span class="text-[10px] font-bold uppercase text-slate-400">Total Field</span>
+          <div id="fieldCount" class="text-2xl font-black font-mono text-white mt-1">0 Boats</div>
+        </div>
+        <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg">
+          <span class="text-[10px] font-bold uppercase text-slate-400">Gross Collected</span>
+          <div id="grossPurse" class="text-2xl font-black font-mono text-white mt-1">$0.00</div>
+        </div>
+        <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg">
+          <span class="text-[10px] font-bold uppercase text-amber-400">Big Bass Pot</span>
+          <div id="bigBassPurse" class="text-2xl font-black font-mono text-amber-400 mt-1">$0.00</div>
+        </div>
+        <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg">
+          <span class="text-[10px] font-bold uppercase text-emerald-400">Net Main Purse</span>
+          <div id="netPurse" class="text-2xl font-black font-mono text-emerald-400 mt-1">$0.00</div>
+        </div>
+        <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg">
+          <span class="text-[10px] font-bold uppercase text-slate-500">1st Place Main</span>
+          <div id="firstPlaceEstimate" class="text-2xl font-black font-mono text-slate-300 mt-1">$0.00</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN INTERACTIVE DECK -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- COLUMN 1: REGISTRATION & RANDOM DRAW FORM -->
+      <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-xl flex flex-col justify-between">
+        <div>
+          <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-2">
+            <h2 class="text-lg font-black text-white">📝 Register Boater</h2>
+            <button type="button" onclick="assignRandomBoatNumber()" class="text-xs text-amber-400 hover:text-amber-300 font-bold">🎲 Draw Random</button>
+          </div>
+
+          <form id="regForm" class="space-y-4">
+            <div>
+              <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Captain / Boater Name</label>
+              <input type="text" id="captainName" required placeholder="Captain Name" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" />
+            </div>
+
+            <div>
+              <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Co-Angler / Partner (Optional)</label>
+              <input type="text" id="partnerName" placeholder="Partner Name" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" />
+            </div>
+
+            <div>
+              <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Captain Mobile Phone (For SMS)</label>
+              <input type="tel" id="captainPhone" placeholder="(555) 000-0000" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm font-mono focus:border-blue-500 focus:outline-none" />
+            </div>
+
+            <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg">
+              <div class="flex justify-between items-center mb-1">
+                <label class="text-xs font-bold uppercase text-slate-400">Assigned Boat #</label>
+                <span id="calculatedFlightTag" class="text-xs font-mono font-bold text-blue-400">Flight 1</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <input type="number" id="boatNum" required min="1" max="250" class="w-24 p-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-xl font-mono text-center font-black text-amber-400 focus:outline-none" />
+                <span id="flightTimeBadge" class="text-xs font-mono text-slate-400">Out: 06:30 | In: 15:00</span>
+              </div>
+            </div>
+
+            <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg space-y-2 text-xs font-bold">
+              <label class="flex items-center gap-2 text-slate-300 cursor-pointer">
+                <input type="checkbox" id="checkEntry" checked class="w-4 h-4 rounded text-blue-600 bg-slate-900 border-slate-700" />
+                <span>Paid Main Entry</span>
+              </label>
+              <label class="flex items-center gap-2 text-amber-400 cursor-pointer">
+                <input type="checkbox" id="checkBigBass" checked class="w-4 h-4 rounded text-amber-600 bg-slate-900 border-slate-700" />
+                <span>Paid Big Bass Side Pot</span>
+              </label>
+            </div>
+
+            <button type="submit" id="saveBtn" class="w-full py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-black text-sm rounded-lg shadow-lg transition">
+              + CONFIRM REGISTRATION & DISPATCH
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- COLUMN 2: FLIGHT SCHEDULE & BULK BLAST -->
+      <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-xl flex flex-col justify-between">
+        <div>
+          <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-2">
+            <h2 class="text-lg font-black text-white">🚀 Flight Schedule</h2>
+            <span class="text-xs text-slate-400">15-Min Stagger</span>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead>
+                <tr class="text-[11px] uppercase text-slate-500 border-b border-slate-800">
+                  <th class="py-2">Flight</th>
+                  <th class="py-2">Range</th>
+                  <th class="py-2">Takeoff</th>
+                  <th class="py-2">Check-In</th>
+                  <th class="py-2 text-right">Dispatch</th>
+                </tr>
+              </thead>
+              <tbody id="flightScheduleBody" class="divide-y divide-slate-800 font-mono text-xs"></tbody>
+            </table>
+          </div>
+
+          <div class="mt-6 border-t border-slate-800 pt-4">
+            <div class="flex justify-between items-center mb-2">
+              <h3 class="text-xs font-black uppercase text-white">Purse Distribution</h3>
+              <span id="placesPaidBadge" class="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-bold">0 Places Paid</span>
+            </div>
+            <div class="max-h-36 overflow-y-auto">
+              <table class="w-full text-left text-xs">
+                <tbody id="payoutTableBody" class="divide-y divide-slate-800 font-mono"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg flex justify-between items-center">
+          <span class="text-xs font-black uppercase text-amber-400">Big Bass 1st Place:</span>
+          <span id="bbPayoutDisplay" class="font-mono text-base font-black text-white">$0.00</span>
+        </div>
+      </div>
+
+      <!-- COLUMN 3: ROSTER -->
+      <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-xl flex flex-col justify-between">
+        <div>
+          <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-2">
+            <h2 class="text-lg font-black text-white">Registered Boats</h2>
+            <span id="rosterCountBadge" class="text-xs bg-slate-800 text-slate-300 font-bold px-2 py-0.5 rounded font-mono">0</span>
+          </div>
+
+          <div id="rosterList" class="space-y-2.5 max-h-[480px] overflow-y-auto pr-1">
+            <p class="text-xs text-slate-500 text-center py-8">Loading live roster...</p>
+          </div>
+        </div>
+
+        <div class="border-t border-slate-800 pt-3 text-[11px] text-slate-500 flex justify-between items-center">
+          <span>Click 💬 to send flight SMS</span>
+          <button onclick="loadData()" class="text-blue-400 hover:underline font-bold">↻ Refresh</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- BULK SMS MODAL -->
+  <div id="bulkSmsModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-lg w-full shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+        <h3 id="modalTitle" class="text-lg font-black text-white">FLIGHT DISPATCH</h3>
+        <button onclick="closeModal()" class="text-slate-500 hover:text-white font-bold">✕</button>
+      </div>
+      <div>
+        <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Recipients (<span id="modalRecipientCount">0</span> Captains)</label>
+        <textarea id="modalPhoneList" readonly rows="2" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-xs font-mono text-slate-300 focus:outline-none"></textarea>
+      </div>
+      <div>
+        <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Message Text</label>
+        <textarea id="modalMessageText" rows="5" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-xs font-mono text-amber-300 focus:outline-none"></textarea>
+      </div>
+      <div class="grid grid-cols-2 gap-3 pt-2">
+        <button onclick="copyFlightBroadcast()" class="py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-lg text-xs border border-slate-700">📋 Copy To Clipboard</button>
+        <a id="modalSmsAnchor" href="#" class="py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-lg text-xs text-center flex items-center justify-center gap-1 shadow-lg">💬 Open Messaging App</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://gjoxrosyboapwfqlfdye.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdqb3hyb3N5Ym9hcHdmcWxmZHllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3MDEwMzQsImV4cCI6MjEwNDI3NzAzNH0.SFcX-NYJgL8lGv5QP2HXN83eaL7x2v0KCJonJXYoUAE';
+
+    const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const broadcast = new BroadcastChannel('stage_jumbotron_feed');
+
+    let activeTournament = null;
+    let participants = [];
+
+    const SCALE_PRESETS = {
+      1: [1.00],
+      2: [0.65, 0.35],
+      3: [0.50, 0.30, 0.20],
+      4: [0.45, 0.28, 0.17, 0.10],
+      5: [0.40, 0.25, 0.16, 0.11, 0.08],
+      7: [0.35, 0.22, 0.14, 0.10, 0.08, 0.06, 0.05],
+      10: [0.30, 0.18, 0.12, 0.09, 0.08, 0.07, 0.06, 0.04, 0.03, 0.03]
+    };
+
+    function getAutoTier(count) {
+      if (count <= 0) return [];
+      if (count <= 5) return SCALE_PRESETS[1];
+      if (count <= 10) return SCALE_PRESETS[2];
+      if (count <= 20) return SCALE_PRESETS[3];
+      if (count <= 35) return SCALE_PRESETS[4];
+      if (count <= 50) return SCALE_PRESETS[5];
+      if (count <= 75) return SCALE_PRESETS[7];
+      return SCALE_PRESETS[10];
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
+
+      ['inputEntryFee', 'inputBbFee', 'inputHouseCut', 'inputPlacesPaid'].forEach(id => {
+        document.getElementById(id).addEventListener('input', calculatePurseAndPayout);
+      });
+
+      document.getElementById('boatNum').addEventListener('input', updateFlightTagForInput);
+      document.getElementById('boatsPerFlightInput').addEventListener('input', () => {
+        updateFlightScheduleDisplay();
+        updateFlightTagForInput();
+      });
+
+      await loadData();
+    });
+
+    async function loadData() {
+      try {
+        const { data: tData, error: tErr } = await client
+          .from('tournaments')
+          .select('*')
+          .eq('is_active', true)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (tErr || !tData || tData.length === 0) {
+          document.getElementById('tournamentHeading').innerText = 'NO ACTIVE TOURNAMENT FOUND';
+          document.getElementById('syncDot').className = 'w-3 h-3 rounded-full bg-red-500';
+          return;
+        }
+
+        activeTournament = tData[0];
+        document.getElementById('tournamentHeading').innerText = activeTournament.title.toUpperCase();
+        document.getElementById('syncDot').className = 'w-3 h-3 rounded-full bg-emerald-500';
+
+        if (activeTournament.lake_name) document.getElementById('lakeInput').value = activeTournament.lake_name;
+        if (activeTournament.event_date) document.getElementById('dateInput').value = activeTournament.event_date;
+        if (activeTournament.first_launch_time) document.getElementById('launchTimeInput').value = activeTournament.first_launch_time.substring(0, 5);
+        if (activeTournament.first_weighin_time) document.getElementById('weighinTimeInput').value = activeTournament.first_weighin_time.substring(0, 5);
+        if (activeTournament.boats_per_flight) document.getElementById('boatsPerFlightInput').value = activeTournament.boats_per_flight;
+
+        // Fetch roster
+        const { data: pData } = await client
+          .from('tournament_participants')
+          .select('*')
+          .eq('tournament_id', activeTournament.id)
+          .order('created_at', { ascending: true });
+
+        participants = pData || [];
+        renderRoster();
+        calculatePurseAndPayout();
+        updateFlightScheduleDisplay();
+        assignRandomBoatNumber();
+
+        // Broadcast to Jumbotron so displays lock on to the active event
+        broadcast.postMessage({
+          type: 'TOURNAMENT_SYNC',
+          tournamentTitle: activeTournament.title,
+          lakeName: activeTournament.lake_name || 'Lake Fork',
+          eventDate: activeTournament.event_date
+        });
+
+      } catch (err) {
+        console.error('Initialization error:', err);
+        document.getElementById('tournamentHeading').innerText = 'CONNECTION / CORS ERROR';
+        document.getElementById('syncDot').className = 'w-3 h-3 rounded-full bg-red-500';
+      }
+    }
+
+    function assignRandomBoatNumber() {
+      const existingNumbers = new Set();
+      participants.forEach(p => {
+        if (p.boat_number) existingNumbers.add(parseInt(p.boat_number, 10));
+        const match = p.display_name.match(/Boat #(\d+)/);
+        if (match) existingNumbers.add(parseInt(match[1], 10));
+      });
+
+      const available = [];
+      for (let i = 1; i <= 200; i++) {
+        if (!existingNumbers.has(i)) available.push(i);
+      }
+
+      const choice = available.length > 0 ? available[Math.floor(Math.random() * available.length)] : participants.length + 1;
+      document.getElementById('boatNum').value = choice;
+      updateFlightTagForInput();
+    }
+
+    function calculateFlight(boatNumber) {
+      const perFlight = parseInt(document.getElementById('boatsPerFlightInput').value, 10) || 25;
+      const flightNum = Math.ceil(boatNumber / perFlight) || 1;
+      const baseLaunchStr = document.getElementById('launchTimeInput').value || "06:30";
+      const baseWeighinStr = document.getElementById('weighinTimeInput').value || "15:00";
+
+      const launchTime = addMinutesToTime(baseLaunchStr, (flightNum - 1) * 15);
+      const weighinTime = addMinutesToTime(baseWeighinStr, (flightNum - 1) * 15);
+
+      return { flightNum, launchTime, weighinTime };
+    }
+
+    function addMinutesToTime(timeStr, minutesToAdd) {
+      const [h, m] = timeStr.split(':').map(Number);
+      const date = new Date();
+      date.setHours(h, m + minutesToAdd, 0);
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function updateFlightTagForInput() {
+      const boatNum = parseInt(document.getElementById('boatNum').value, 10) || 1;
+      const { flightNum, launchTime, weighinTime } = calculateFlight(boatNum);
+      document.getElementById('calculatedFlightTag').innerText = `Flight ${flightNum}`;
+      document.getElementById('flightTimeBadge').innerText = `Out: ${launchTime} | In: ${weighinTime}`;
+    }
+
+    function extractBoatNum(displayName) {
+      const match = displayName.match(/Boat #(\d+)/);
+      return match ? parseInt(match[1], 10) : 1;
+    }
+
+    function updateFlightScheduleDisplay() {
+      const perFlight = parseInt(document.getElementById('boatsPerFlightInput').value, 10) || 25;
+      const tbody = document.getElementById('flightScheduleBody');
+      tbody.innerHTML = '';
+
+      for (let f = 1; f <= 4; f++) {
+        const startBoat = (f - 1) * perFlight + 1;
+        const endBoat = f * perFlight;
+        const baseLaunch = document.getElementById('launchTimeInput').value || "06:30";
+        const baseWeigh = document.getElementById('weighinTimeInput').value || "15:00";
+        const launch = addMinutesToTime(baseLaunch, (f - 1) * 15);
+        const weigh = addMinutesToTime(baseWeigh, (f - 1) * 15);
+
+        const flightAnglers = participants.filter(p => {
+          const bNum = p.boat_number || extractBoatNum(p.display_name);
+          return Math.ceil(bNum / perFlight) === f;
+        });
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td class="py-2 text-white font-bold">Flight ${f}</td>
+          <td class="py-2 text-slate-400">#${startBoat}-${endBoat}</td>
+          <td class="py-2 text-emerald-400 font-bold">${launch}</td>
+          <td class="py-2 text-amber-400 font-bold">${weigh}</td>
+          <td class="py-2 text-right">
+            <button onclick="triggerFlightBroadcast(${f}, '${launch}', '${weigh}')" class="px-2 py-0.5 bg-emerald-600/20 hover:bg-emerald-600 border border-emerald-500/40 text-emerald-400 hover:text-white rounded text-[10px] font-bold transition">
+              💬 Blast (${flightAnglers.length})
+            </button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      }
+    }
+
+    function calculatePurseAndPayout() {
+      const totalBoats = participants.length;
+      const entryFee = parseFloat(document.getElementById('inputEntryFee').value) || 0;
+      const bbFee = parseFloat(document.getElementById('inputBbFee').value) || 0;
+      const housePct = (parseFloat(document.getElementById('inputHouseCut').value) || 0) / 100;
+      const overrideVal = document.getElementById('inputPlacesPaid').value;
+
+      const grossMain = totalBoats * entryFee;
+      const houseCut = grossMain * housePct;
+      const netMain = Math.max(0, grossMain - houseCut);
+      const bbPurse = totalBoats * bbFee;
+
+      document.getElementById('fieldCount').innerText = `${totalBoats} Boats`;
+      document.getElementById('grossPurse').innerText = `$${(grossMain + bbPurse).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+      document.getElementById('netPurse').innerText = `$${netMain.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+      document.getElementById('bigBassPurse').innerText = `$${bbPurse.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+      document.getElementById('bbPayoutDisplay').innerText = `$${bbPurse.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+
+      let tier = (overrideVal === 'auto') ? getAutoTier(totalBoats) : (SCALE_PRESETS[parseInt(overrideVal, 10)] || []);
+      document.getElementById('placesPaidBadge').innerText = `${tier.length} Places Paid`;
+
+      const firstEst = tier.length > 0 ? (netMain * tier[0]) : 0;
+      document.getElementById('firstPlaceEstimate').innerText = `$${firstEst.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+
+      const tbody = document.getElementById('payoutTableBody');
+      tbody.innerHTML = '';
+
+      if (tier.length === 0 || totalBoats === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="py-2 text-center text-slate-500">Register boats to calculate purse</td></tr>';
+        return;
+      }
+
+      tier.forEach((pct, idx) => {
+        const place = idx + 1;
+        const payout = netMain * pct;
+        const tr = document.createElement('tr');
+        tr.className = idx === 0 ? 'text-amber-300 font-bold' : 'text-slate-300';
+        tr.innerHTML = `
+          <td class="py-1">${place === 1 ? '1st' : place === 2 ? '2nd' : place === 3 ? '3rd' : `${place}th`}</td>
+          <td class="py-1 text-right text-slate-400">${(pct * 100).toFixed(0)}%</td>
+          <td class="py-1 text-right font-black">$${payout.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderRoster() {
+      const container = document.getElementById('rosterList');
+      document.getElementById('rosterCountBadge').innerText = participants.length;
+      container.innerHTML = '';
+
+      if (participants.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-500 text-center py-8">No anglers registered yet.</p>';
+        return;
+      }
+
+      participants.slice().reverse().forEach(p => {
+        const boatNum = p.boat_number || extractBoatNum(p.display_name);
+        const { flightNum, launchTime, weighinTime } = calculateFlight(boatNum);
+
+        const card = document.createElement('div');
+        card.className = 'p-3 rounded-lg border bg-slate-950/90 border-slate-800 flex justify-between items-center';
+
+        const lake = document.getElementById('lakeInput').value || 'Lake Fork';
+        const date = document.getElementById('dateInput').value || 'Tournament Day';
+        const rawPhone = p.phone ? p.phone.replace(/[^0-9]/g, '') : '';
+        const smsBody = encodeURIComponent(
+          `AAFL OFFICIAL NOTICE:\n` +
+          `Venue: ${lake} (${date})\n` +
+          `Angler: ${p.display_name}\n` +
+          `Boat #: ${boatNum}\n` +
+          `Flight: ${flightNum}\n` +
+          `Takeoff: ${launchTime}\n` +
+          `Weigh-In Due: ${weighinTime}\n` +
+          `Tight lines!`
+        );
+
+        const smsLink = rawPhone ? `sms:${rawPhone}?body=${smsBody}` : `sms:?body=${smsBody}`;
+
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-mono text-xs font-black px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                #${boatNum}
+              </span>
+              <span class="font-bold text-sm text-white">${p.display_name}</span>
+            </div>
+            <div class="text-[11px] text-slate-400 mt-1 font-mono">
+              Flight ${flightNum} • Out: ${launchTime} • In: ${weighinTime}
+            </div>
+            ${p.phone ? `<div class="text-[10px] text-blue-400 font-mono mt-0.5">📞 ${p.phone}</div>` : ''}
+          </div>
+
+          <div class="flex items-center gap-2">
+            <a href="${smsLink}" title="Send SMS Confirmation" class="px-2.5 py-1.5 bg-emerald-600/20 border border-emerald-500/40 text-emerald-400 rounded-lg text-xs font-bold hover:bg-emerald-600 hover:text-white transition flex items-center gap-1">
+              💬 Text
+            </a>
+            <button onclick="removeParticipant('${p.id}')" class="text-slate-600 hover:text-red-400 text-xs px-1 font-bold">✕</button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    async function saveEventSettings() {
+      if (!activeTournament) return;
+      const lake = document.getElementById('lakeInput').value.trim();
+      const date = document.getElementById('dateInput').value;
+      const launch = document.getElementById('launchTimeInput').value;
+      const weigh = document.getElementById('weighinTimeInput').value;
+      const perFlight = parseInt(document.getElementById('boatsPerFlightInput').value, 10) || 25;
+
+      const { error } = await client
+        .from('tournaments')
+        .update({
+          lake_name: lake,
+          event_date: date,
+          first_launch_time: launch + ':00',
+          first_weighin_time: weigh + ':00',
+          boats_per_flight: perFlight
+        })
+        .eq('id', activeTournament.id);
+
+      if (error) {
+        alert('Error saving: ' + error.message);
+      } else {
+        alert('Tournament Schedule Settings Saved!');
+        updateFlightScheduleDisplay();
+        renderRoster();
+        broadcast.postMessage({
+          type: 'TOURNAMENT_SYNC',
+          tournamentTitle: activeTournament.title,
+          lakeName: lake,
+          eventDate: date
+        });
+      }
+    }
+
+    document.getElementById('regForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!activeTournament) {
+        alert('Tournament not loaded. Check internet or Supabase connection.');
+        return;
+      }
+
+      const boatNum = parseInt(document.getElementById('boatNum').value, 10);
+      const capName = document.getElementById('captainName').value.trim();
+      const partner = document.getElementById('partnerName').value.trim();
+      const phone = document.getElementById('captainPhone').value.trim();
+
+      const { flightNum, launchTime, weighinTime } = calculateFlight(boatNum);
+
+      const fullName = partner 
+        ? `Boat #${boatNum} - ${capName} & ${partner}` 
+        : `Boat #${boatNum} - ${capName}`;
+
+      const btn = document.getElementById('saveBtn');
+      btn.innerText = 'Registering...';
+      btn.disabled = true;
+
+      try {
+        const { data, error } = await client
+          .from('tournament_participants')
+          .insert([{
+            tournament_id: activeTournament.id,
+            display_name: fullName,
+            boat_number: boatNum,
+            phone: phone || null,
+            flight_number: flightNum,
+            launch_time: launchTime,
+            weighin_time: weighinTime
+          }])
+          .select();
+
+        btn.innerText = '+ CONFIRM REGISTRATION & DISPATCH';
+        btn.disabled = false;
+
+        if (error) {
+          alert('Database Error: ' + error.message);
+          return;
+        }
+
+        const added = (data && data.length > 0) ? data[0] : { id: Math.random().toString(), display_name: fullName, boat_number: boatNum, phone };
+        participants.push(added);
+
+        // Immediate cross-window broadcast so stage console searches reflect this angler right now
+        broadcast.postMessage({
+          type: 'NEW_ANGLER_REGISTERED',
+          angler: added
+        });
+
+        document.getElementById('captainName').value = '';
+        document.getElementById('partnerName').value = '';
+        document.getElementById('captainPhone').value = '';
+
+        renderRoster();
+        calculatePurseAndPayout();
+        updateFlightScheduleDisplay();
+        assignRandomBoatNumber();
+
+        if (phone) {
+          const lake = document.getElementById('lakeInput').value || 'Lake Fork';
+          const rawPhone = phone.replace(/[^0-9]/g, '');
+          const smsText = encodeURIComponent(
+            `AAFL REGISTRATION CONFIRMED:\n` +
+            `Venue: ${lake}\n` +
+            `Boat: #${boatNum}\n` +
+            `Flight: ${flightNum}\n` +
+            `Launch: ${launchTime}\n` +
+            `Check-In: ${weighinTime}\n` +
+            `See you on the water!`
+          );
+          window.location.href = `sms:${rawPhone}?body=${smsText}`;
+        }
+
+      } catch (err) {
+        btn.innerText = '+ CONFIRM REGISTRATION & DISPATCH';
+        btn.disabled = false;
+        alert('Error: ' + err.message);
+      }
+    });
+
+    function triggerFlightBroadcast(flightNumber, launchTime, weighinTime) {
+      const perFlight = parseInt(document.getElementById('boatsPerFlightInput').value, 10) || 25;
+      const lake = document.getElementById('lakeInput').value || 'Lake Fork';
+      const date = document.getElementById('dateInput').value || 'Tournament Day';
+
+      const flightParticipants = participants.filter(p => {
+        const bNum = p.boat_number || extractBoatNum(p.display_name);
+        return Math.ceil(bNum / perFlight) === flightNumber;
+      });
+
+      const validNumbers = flightParticipants
+        .filter(p => p.phone && p.phone.replace(/[^0-9]/g, '').length >= 10)
+        .map(p => p.phone.replace(/[^0-9]/g, ''));
+
+      if (validNumbers.length === 0) {
+        alert(`No phone numbers on record for registered captains in Flight ${flightNumber}.`);
+        return;
+      }
+
+      const broadcastMsg = 
+        `AAFL FLIGHT ${flightNumber} NOTICE:\n` +
+        `Venue: ${lake} (${date})\n` +
+        `Flight ${flightNumber} Launch: ${launchTime}\n` +
+        `Weigh-In Due: ${weighinTime}\n` +
+        `Check in at the official buoys before ${weighinTime}. Good luck!`;
+
+      const recipientDelim = navigator.userAgent.match(/Android/i) ? ';' : ',';
+      const recipientString = validNumbers.join(recipientDelim);
+
+      document.getElementById('modalTitle').innerText = `BROADCAST TO FLIGHT ${flightNumber}`;
+      document.getElementById('modalRecipientCount').innerText = validNumbers.length;
+      document.getElementById('modalPhoneList').value = validNumbers.join(', ');
+      document.getElementById('modalMessageText').value = broadcastMsg;
+
+      document.getElementById('modalSmsAnchor').href = `sms:${recipientString}?body=${encodeURIComponent(broadcastMsg)}`;
+      document.getElementById('bulkSmsModal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('bulkSmsModal').classList.add('hidden');
+    }
+
+    function copyFlightBroadcast() {
+      const phones = document.getElementById('modalPhoneList').value;
+      const text = document.getElementById('modalMessageText').value;
+      const fullCopy = `RECIPIENTS:\n${phones}\n\nMESSAGE:\n${text}`;
+      navigator.clipboard.writeText(fullCopy).then(() => {
+        alert('Copied to clipboard! You can paste directly into your messaging tool.');
+      });
+    }
+
+    async function removeParticipant(id) {
+      if (!confirm('Remove this boat?')) return;
+      await client.from('tournament_participants').delete().eq('id', id);
+      participants = participants.filter(p => p.id !== id);
+      renderRoster();
+      calculatePurseAndPayout();
+      updateFlightScheduleDisplay();
+      assignRandomBoatNumber();
+    }
+
+    function openJumbotron() {
+      window.open('jumbotron.html', '_blank', 'width=1280,height=720');
+    }
+  </script>
+</body>
+</html>
