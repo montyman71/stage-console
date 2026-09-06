@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AAFL Weigh-Master Stage Console</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- TailWind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Supabase JS Client via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans">
+
+  <!-- SCREEN 1: DIRECTOR LOGIN -->
+  <div id="loginView" class="flex min-h-screen items-center justify-center p-4">
+    <div class="w-full max-w-md bg-slate-900 border border-slate-800 p-8 rounded-2xl shadow-2xl">
+      <div class="text-center mb-6">
+        <span class="text-xs text-blue-400 font-bold uppercase tracking-widest">American Anglers Fishing League</span>
+        <h1 class="text-2xl font-black text-white mt-1">DIRECTOR PORTAL</h1>
+      </div>
+      <div id="loginAlert" class="hidden mb-4 p-3 bg-red-950/60 border border-red-800 text-red-300 text-xs rounded-lg"></div>
+      <form id="loginForm" class="space-y-4">
+        <div>
+          <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Director Email</label>
+          <input type="email" id="emailInput" required placeholder="director@americananglers.com" class="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Password</label>
+          <input type="password" id="passInput" required placeholder="••••••••" class="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" />
+        </div>
+        <button type="submit" id="loginBtn" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-lg text-sm transition">Sign In to Stage</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- SCREEN 2: TOURNAMENT SELECTOR -->
+  <div id="hubView" class="hidden p-8 max-w-5xl mx-auto">
+    <div class="flex justify-between items-center border-b border-slate-800 pb-4 mb-6">
+      <div>
+        <h1 class="text-2xl font-black text-white">SELECT ACTIVE TOURNAMENT</h1>
+        <p class="text-xs text-slate-400 uppercase font-bold">Pick your event to launch stage scale</p>
+      </div>
+      <button onclick="handleLogout()" class="px-4 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs font-bold text-slate-400 hover:text-white">Sign Out</button>
+    </div>
+    <div id="tournamentGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+  </div>
+
+  <!-- SCREEN 3: OFFICIAL STAGE OPERATOR CONSOLE -->
+  <div id="stageView" class="hidden p-6 max-w-7xl mx-auto">
+    <div class="flex justify-between items-center bg-slate-900 border border-slate-800 p-4 rounded-xl mb-6">
+      <div>
+        <h1 id="stageTitle" class="text-xl font-black text-white">STAGE OPERATOR CONSOLE</h1>
+        <p class="text-xs text-slate-400">Press <kbd class="bg-slate-800 px-1 py-0.5 rounded text-amber-400">/</kbd> to search anglers | <kbd class="bg-slate-800 px-1 py-0.5 rounded text-amber-400">Space</kbd> to lock weight</p>
+      </div>
+      <div class="flex gap-2">
+        <button id="scaleBtn" onclick="connectScale()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs font-bold flex items-center gap-2">
+          <span id="scaleDot" class="w-2 h-2 rounded-full bg-amber-400"></span>
+          <span id="scaleLabel">Connect Digital Scale (USB)</span>
+        </button>
+        <button onclick="openJumbotron()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 rounded-lg text-xs font-bold text-slate-950">
+          Open Jumbotron (Display 2) ↗
+        </button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Column 1: Angler Search -->
+      <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl">
+        <label class="text-xs font-bold uppercase text-slate-400 block mb-2">Find Angler on Stage (Press '/')</label>
+        <input id="anglerSearch" placeholder="Type boat # or angler name..." class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white font-medium mb-3 focus:border-blue-500 focus:outline-none" />
+        <div id="searchResults" class="space-y-1"></div>
+
+        <div id="selectedBox" class="hidden mt-4 p-4 bg-blue-950/40 border border-blue-800/60 rounded-xl">
+          <span class="text-[10px] font-black uppercase text-blue-400 tracking-wider">Angler on Bump Board</span>
+          <p id="selectedName" class="text-2xl font-black text-white mt-1"></p>
+        </div>
+      </div>
+
+      <!-- Column 2: Digital Scale Stream -->
+      <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl text-center">
+        <span class="text-xs font-bold uppercase text-slate-400 block text-left">Live Certified Scale</span>
+        <div class="bg-slate-950 border border-slate-800 p-6 rounded-xl my-4">
+          <span id="liveWeightDisplay" class="font-mono text-6xl font-black text-emerald-400">0.00</span>
+          <span class="text-lg text-slate-500 font-bold ml-1">LBS</span>
+        </div>
+        
+        <div class="text-left space-y-3">
+          <div>
+            <label class="text-xs font-bold text-slate-400 uppercase">Gross Locked Weight</label>
+            <input id="grossInput" type="number" step="0.01" placeholder="0.00" class="w-full text-center text-2xl font-black bg-slate-950 border border-slate-700 rounded-lg p-2 text-white mt-1" />
+          </div>
+
+          <div>
+            <label class="text-xs font-bold text-slate-400 uppercase block mb-1">Dead Fish Count (-0.25 lb each)</label>
+            <div class="flex gap-2">
+              <button type="button" onclick="setDead(0)" class="deadBtn flex-1 py-1.5 bg-red-600 text-white font-bold rounded text-xs">0</button>
+              <button type="button" onclick="setDead(1)" class="deadBtn flex-1 py-1.5 bg-slate-800 text-slate-400 font-bold rounded text-xs">1</button>
+              <button type="button" onclick="setDead(2)" class="deadBtn flex-1 py-1.5 bg-slate-800 text-slate-400 font-bold rounded text-xs">2</button>
+              <button type="button" onclick="setDead(3)" class="deadBtn flex-1 py-1.5 bg-slate-800 text-slate-400 font-bold rounded text-xs">3</button>
+              <button type="button" onclick="setDead(4)" class="deadBtn flex-1 py-1.5 bg-slate-800 text-slate-400 font-bold rounded text-xs">4</button>
+              <button type="button" onclick="setDead(5)" class="deadBtn flex-1 py-1.5 bg-slate-800 text-slate-400 font-bold rounded text-xs">5</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Column 3: Net Lock & Commit -->
+      <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl flex flex-col justify-between">
+        <div>
+          <span class="text-xs font-bold uppercase text-slate-400">Official Computation</span>
+          <div class="my-6 space-y-2">
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">Dead Penalty:</span>
+              <span id="penaltyDisplay" class="font-mono text-red-400 font-bold">-0.00 lbs</span>
+            </div>
+            <div class="border-t border-slate-800 pt-3 flex justify-between items-baseline">
+              <span class="font-bold text-white">Official Net:</span>
+              <span id="netDisplay" class="font-mono text-4xl font-black text-blue-400">0.00 lbs</span>
+            </div>
+          </div>
+        </div>
+
+        <button id="commitBtn" onclick="commitWeight()" disabled class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-30 text-white font-black rounded-xl text-base shadow-lg transition">
+          OFFICIAL LOCK & COMMIT
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // LIVE SUPABASE CONFIGURATION
+    const SUPABASE_URL = 'https://gjoxrosyboapwfqlfdye.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdqb3hyb3N5Ym9hcHdmcWxmZHllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3MDEwMzQsImV4cCI6MjEwNDI3NzAzNH0.SFcX-NYJgL8lGv5QP2HXN83eaL7x2v0KCJonJXYoUAE';
+
+    const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const broadcast = new BroadcastChannel('stage_jumbotron_feed');
+
+    let activeTournament = null;
+    let selectedAngler = null;
+    let deadCount = 0;
+    let liveWeight = 0.00;
+
+    // AUTHENTICATION CONTROLLER
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('emailInput').value;
+      const password = document.getElementById('passInput').value;
+      const alertBox = document.getElementById('loginAlert');
+      const btn = document.getElementById('loginBtn');
+
+      btn.innerText = 'Authenticating...';
+      const { data, error } = await client.auth.signInWithPassword({ email, password });
+
+      if (error) {
+        alertBox.classList.remove('hidden');
+        alertBox.innerText = error.message;
+        btn.innerText = 'Sign In to Stage';
+      } else {
+        showHub();
+      }
+    });
+
+    async function showHub() {
+      document.getElementById('loginView').classList.add('hidden');
+      document.getElementById('hubView').classList.remove('hidden');
+      
+      const { data, error } = await client.from('tournaments').select('*').order('created_at', { ascending: false });
+      const grid = document.getElementById('tournamentGrid');
+      grid.innerHTML = '';
+
+      if (!data || data.length === 0) {
+        grid.innerHTML = '<p class="text-slate-500 col-span-2 text-center py-8">No tournaments found in database. Create one in your Supabase table.</p>';
+        return;
+      }
+
+      data.forEach(t => {
+        const card = document.createElement('div');
+        card.className = 'bg-slate-900 border border-slate-800 p-5 rounded-xl shadow-xl flex justify-between items-center';
+        card.innerHTML = `
+          <div>
+            <span class="text-[10px] font-mono font-bold bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded border border-amber-500/20">PIN: ${t.pin}</span>
+            <h3 class="text-lg font-bold text-white mt-1">${t.title}</h3>
+          </div>
+          <button onclick="launchStage('${t.id}', '${t.title}')" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs rounded-lg">LAUNCH STAGE</button>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function launchStage(id, title) {
+      activeTournament = { id, title };
+      document.getElementById('hubView').classList.add('hidden');
+      document.getElementById('stageView').classList.remove('hidden');
+      document.getElementById('stageTitle').innerText = title.toUpperCase();
+    }
+
+    // ANGLER SEARCH ENGINE
+    const searchInput = document.getElementById('anglerSearch');
+    searchInput.addEventListener('input', async (e) => {
+      const q = e.target.value.trim();
+      const resBox = document.getElementById('searchResults');
+      if (q.length < 2) { resBox.innerHTML = ''; return; }
+
+      const { data } = await client.from('tournament_participants')
+        .select('id, display_name')
+        .eq('tournament_id', activeTournament.id)
+        .ilike('display_name', `%${q}%`)
+        .limit(4);
+
+      resBox.innerHTML = '';
+      (data || []).forEach(a => {
+        const b = document.createElement('button');
+        b.className = 'w-full text-left p-2 hover:bg-blue-600 rounded text-sm font-semibold text-white flex justify-between';
+        b.innerHTML = `<span>${a.display_name}</span> <span class="text-xs bg-slate-800 px-1.5 py-0.5 rounded">SELECT</span>`;
+        b.onclick = () => selectAngler(a);
+        resBox.appendChild(b);
+      });
+    });
+
+    function selectAngler(a) {
+      selectedAngler = a;
+      document.getElementById('selectedBox').classList.remove('hidden');
+      document.getElementById('selectedName').innerText = a.display_name;
+      document.getElementById('searchResults').innerHTML = '';
+      searchInput.value = '';
+      document.getElementById('commitBtn').disabled = false;
+      broadcast.postMessage({ type: 'ANGLER_ON_STAGE', anglerName: a.display_name });
+    }
+
+    // CALCULATION LOGIC
+    function setDead(count) {
+      deadCount = count;
+      document.querySelectorAll('.deadBtn').forEach((btn, idx) => {
+        btn.className = idx === count 
+          ? 'deadBtn flex-1 py-1.5 bg-red-600 text-white font-bold rounded text-xs' 
+          : 'deadBtn flex-1 py-1.5 bg-slate-800 text-slate-400 font-bold rounded text-xs';
+      });
+      recalculate();
+    }
+
+    const grossInput = document.getElementById('grossInput');
+    grossInput.addEventListener('input', recalculate);
+
+    function recalculate() {
+      const gross = parseFloat(grossInput.value) || 0.00;
+      const penalty = deadCount * 0.25;
+      const net = Math.max(0, gross - penalty);
+      document.getElementById('penaltyDisplay').innerText = `-${penalty.toFixed(2)} lbs`;
+      document.getElementById('netDisplay').innerText = `${net.toFixed(2)} lbs`;
+    }
+
+    // BROWSER WEB SERIAL HARDWARE SCALE CONNECTION
+    async function connectScale() {
+      if (!('serial' in navigator)) {
+        alert('Use Google Chrome or MS Edge to connect USB scales.');
+        return;
+      }
+      try {
+        const port = await navigator.serial.requestPort();
+        await port.open({ baudRate: 9600 });
+        document.getElementById('scaleDot').className = 'w-2 h-2 rounded-full bg-emerald-400';
+        document.getElementById('scaleLabel').innerText = 'Scale Streaming (9600 Baud)';
+
+        const decoder = new TextDecoderStream();
+        port.readable.pipeTo(decoder.writable);
+        const reader = decoder.readable.getReader();
+
+        let buf = '';
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buf += value;
+          const lines = buf.split(/\r\n|\n/);
+          buf = lines.pop();
+          for (const line of lines) {
+            const match = line.match(/[-+]?[0-9]*\.?[0-9]+/);
+            if (match) {
+              liveWeight = parseFloat(match[0]);
+              document.getElementById('liveWeightDisplay').innerText = liveWeight.toFixed(2);
+              broadcast.postMessage({ type: 'LIVE_WEIGHT_TICKER', weight: liveWeight, isStable: true });
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Scale error:', e);
+      }
+    }
+
+    // COMMIT WEIGHT
+    async function commitWeight() {
+      const gross = parseFloat(grossInput.value) || 0;
+      const penalty = deadCount * 0.25;
+      const net = Math.max(0, gross - penalty);
+
+      const { error } = await client.from('official_stage_weights').insert({
+        tournament_id: activeTournament.id,
+        participant_id: selectedAngler.id,
+        gross_weight_lbs: gross,
+        dead_fish_count: deadCount,
+        dead_penalty_deduction: penalty,
+        net_weight_lbs: net,
+        is_locked: true
+      });
+
+      if (error) {
+        alert(`Failed to save weight: ${error.message}`);
+        return;
+      }
+
+      broadcast.postMessage({ type: 'WEIGHT_LOCKED', netWeight: net.toFixed(2) });
+      alert(`Official score of ${net.toFixed(2)} lbs locked for ${selectedAngler.display_name}!`);
+      
+      selectedAngler = null;
+      grossInput.value = '';
+      setDead(0);
+      document.getElementById('selectedBox').classList.add('hidden');
+      document.getElementById('commitBtn').disabled = true;
+    }
+
+    // KEYBOARD HOTKEYS
+    window.addEventListener('keydown', (e) => {
+      if (e.key === '/' && document.activeElement !== searchInput) {
+        e.preventDefault();
+        searchInput.focus();
+      }
+      if (e.code === 'Space' && document.activeElement === document.body && liveWeight > 0) {
+        e.preventDefault();
+        grossInput.value = liveWeight.toFixed(2);
+        recalculate();
+      }
+    });
+
+    function openJumbotron() {
+      window.open('jumbotron.html', '_blank', 'width=1280,height=720');
+    }
+
+    async function handleLogout() {
+      await client.auth.signOut();
+      location.reload();
+    }
+  </script>
+</body>
+</html>

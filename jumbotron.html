@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AAFL Stage Jumbotron</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-white h-screen flex flex-col justify-between p-12 select-none overflow-hidden">
+  <header class="border-b-2 border-slate-800 pb-4">
+    <h1 class="text-3xl font-black text-blue-500 tracking-widest">AMERICAN ANGLERS FISHING LEAGUE</h1>
+    <p class="text-slate-400 text-sm font-bold uppercase">Official Certified Stage Scale</p>
+  </header>
+
+  <main class="text-center my-auto">
+    <div id="anglerBadge" class="inline-block bg-slate-900 border border-slate-800 px-8 py-3 rounded-full text-2xl font-bold uppercase mb-8 text-slate-300">
+      Awaiting Next Angler
+    </div>
+    <div>
+      <div id="scaleNumber" class="font-mono text-[14rem] font-black leading-none text-emerald-400 drop-shadow-2xl">0.00</div>
+      <span class="text-3xl font-black text-slate-500 uppercase tracking-widest">Pounds</span>
+    </div>
+  </main>
+
+  <footer class="border-t-2 border-slate-800 pt-4 text-xs font-bold text-slate-500 flex justify-between">
+    <span>5-Fish Bag Limit</span>
+    <span>Stage Feed Active</span>
+  </footer>
+
+  <script>
+    const broadcast = new BroadcastChannel('stage_jumbotron_feed');
+    broadcast.onmessage = (event) => {
+      const { data } = event;
+      if (data.type === 'ANGLER_ON_STAGE') {
+        document.getElementById('anglerBadge').innerText = data.anglerName;
+        document.getElementById('scaleNumber').innerText = '0.00';
+        document.getElementById('scaleNumber').className = 'font-mono text-[14rem] font-black leading-none text-slate-400';
+      } else if (data.type === 'LIVE_WEIGHT_TICKER') {
+        document.getElementById('scaleNumber').innerText = data.weight.toFixed(2);
+        document.getElementById('scaleNumber').className = 'font-mono text-[14rem] font-black leading-none text-emerald-400';
+      } else if (data.type === 'WEIGHT_LOCKED') {
+        document.getElementById('scaleNumber').innerText = data.netWeight;
+        document.getElementById('scaleNumber').className = 'font-mono text-[14rem] font-black leading-none text-blue-400';
+      }
+    };
+  </script>
+</body>
+</html>
