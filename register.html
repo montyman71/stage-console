@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>AAFL Registration, Flights & Purse Hub</title>
+  <title>AAFL Director Hub - Registration & Tournament Manager</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -11,7 +11,7 @@
 
   <div class="max-w-7xl mx-auto space-y-6">
 
-    <!-- TOP BAR -->
+    <!-- TOP BAR & TOURNAMENT SWITCHER -->
     <div class="flex flex-wrap justify-between items-center bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-xl gap-4">
       <div>
         <div class="flex items-center gap-3">
@@ -21,12 +21,23 @@
         <p class="text-xs text-slate-400 mt-0.5">AAFL Central Registration Desk & Dynamic Purse Engine</p>
       </div>
 
-      <div class="flex items-center gap-3">
-        <a href="index.html" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-black text-white transition">
-          Go to Stage Console →
+      <!-- DIRECTOR TOURNAMENT CONTROLS -->
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="flex items-center gap-1.5 bg-slate-950 border border-slate-700 px-2.5 py-1 rounded-lg">
+          <span class="text-[11px] font-bold text-slate-400 uppercase">Load Event:</span>
+          <select id="tournamentSelect" onchange="switchTournament(this.value)" class="bg-transparent text-white font-bold text-xs focus:outline-none cursor-pointer">
+            <option value="">Loading tournaments...</option>
+          </select>
+        </div>
+
+        <button onclick="openNewTournamentModal()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-xs font-black text-white transition">
+          + New Event
+        </button>
+        <a href="index.html" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-black text-white transition">
+          Stage Console →
         </a>
-        <button onclick="openJumbotron()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 rounded-lg text-xs font-black text-slate-950 transition">
-          Open Jumbotron ↗
+        <button onclick="openJumbotron()" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 rounded-lg text-xs font-black text-slate-950 transition">
+          Jumbotron ↗
         </button>
       </div>
     </div>
@@ -41,7 +52,7 @@
       <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
         <div class="col-span-2">
           <label class="text-[11px] font-bold uppercase text-slate-400 block mb-1">Lake / Body of Water</label>
-          <input type="text" id="lakeInput" value="Lake Fork" placeholder="Lake Fork, TX" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white font-bold text-sm focus:border-blue-500 focus:outline-none" />
+          <input type="text" id="lakeInput" placeholder="Lake Fork, TX" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white font-bold text-sm focus:border-blue-500 focus:outline-none" />
         </div>
         <div>
           <label class="text-[11px] font-bold uppercase text-slate-400 block mb-1">Event Date</label>
@@ -62,7 +73,7 @@
       </div>
     </div>
 
-    <!-- PURSE SUMMARY DASHBOARD -->
+    <!-- PURSE SUMMARY HUD -->
     <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl shadow-xl space-y-4">
       <div class="flex items-center justify-between border-b border-slate-800 pb-2">
         <h2 class="text-xs font-black uppercase text-amber-400 tracking-widest">⚙️ Fee Parameters & Real-Time Purse</h2>
@@ -241,6 +252,39 @@
     </div>
   </div>
 
+  <!-- MODAL: CREATE NEW TOURNAMENT -->
+  <div id="newTournamentModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-md w-full shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+        <h3 class="text-lg font-black text-white">CREATE NEW EVENT</h3>
+        <button onclick="closeNewTournamentModal()" class="text-slate-500 hover:text-white font-bold">✕</button>
+      </div>
+      <form id="newTournForm" onsubmit="createTournament(event)" class="space-y-3">
+        <div>
+          <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Event Title</label>
+          <input type="text" id="newTournTitle" required placeholder="e.g. Sam Rayburn Open 2026" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm" />
+        </div>
+        <div>
+          <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Lake / Body of Water</label>
+          <input type="text" id="newTournLake" required placeholder="e.g. Sam Rayburn Reservoir" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm" />
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Unique PIN</label>
+            <input type="text" id="newTournPin" required placeholder="RAYBURN26" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm uppercase font-mono" />
+          </div>
+          <div>
+            <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Event Date</label>
+            <input type="date" id="newTournDate" required class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm" />
+          </div>
+        </div>
+        <button type="submit" id="createTournBtn" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase rounded-lg shadow-lg transition mt-2">
+          Create & Activate Event
+        </button>
+      </form>
+    </div>
+  </div>
+
   <!-- BULK SMS MODAL -->
   <div id="bulkSmsModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
     <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-lg w-full shadow-2xl space-y-4">
@@ -296,6 +340,7 @@
 
     window.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
+      document.getElementById('newTournDate').value = new Date().toISOString().split('T')[0];
 
       ['inputEntryFee', 'inputBbFee', 'inputHouseCut', 'inputPlacesPaid'].forEach(id => {
         document.getElementById(id).addEventListener('input', calculatePurseAndPayout);
@@ -307,8 +352,49 @@
         updateFlightTagForInput();
       });
 
+      await loadTournamentList();
       await loadData();
+      setupCrossScreenListeners();
     });
+
+    // Populate dropdown with all database tournaments
+    async function loadTournamentList() {
+      const { data } = await client
+        .from('tournaments')
+        .select('id, title, pin, is_active')
+        .order('created_at', { ascending: false });
+
+      const sel = document.getElementById('tournamentSelect');
+      sel.innerHTML = '';
+      (data || []).forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.id;
+        opt.innerText = `${t.title} (${t.pin})${t.is_active ? ' ★ ACTIVE' : ''}`;
+        if (t.is_active) opt.selected = true;
+        sel.appendChild(opt);
+      });
+    }
+
+    // Switch active tournament from the dropdown
+    async function switchTournament(tournamentId) {
+      if (!tournamentId) return;
+      document.getElementById('syncDot').className = 'w-3 h-3 rounded-full bg-amber-500 animate-pulse';
+
+      const { error } = await client.rpc('set_active_tournament', { p_tournament_id: tournamentId });
+      if (error) {
+        alert('Failed to switch event: ' + error.message);
+        return;
+      }
+
+      await loadTournamentList();
+      await loadData();
+
+      // Broadcast switch to stage console and jumbotron
+      broadcast.postMessage({
+        type: 'ACTIVE_TOURNAMENT_CHANGED',
+        tournamentId: tournamentId
+      });
+    }
 
     async function loadData() {
       try {
@@ -348,7 +434,7 @@
         updateFlightScheduleDisplay();
         assignRandomBoatNumber();
 
-        // Broadcast to Jumbotron so displays lock on to the active event
+        // Broadcast to Jumbotron so displays lock on
         broadcast.postMessage({
           type: 'TOURNAMENT_SYNC',
           tournamentTitle: activeTournament.title,
@@ -361,6 +447,81 @@
         document.getElementById('tournamentHeading').innerText = 'CONNECTION / CORS ERROR';
         document.getElementById('syncDot').className = 'w-3 h-3 rounded-full bg-red-500';
       }
+    }
+
+    function setupCrossScreenListeners() {
+      // Listen for WebSocket updates from Supabase
+      client
+        .channel('register-sync')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'tournaments' }, () => {
+          loadTournamentList();
+        })
+        .subscribe();
+
+      // Listen for BroadcastChannel events
+      broadcast.onmessage = (event) => {
+        if (event.data.type === 'ACTIVE_TOURNAMENT_CHANGED') {
+          loadData();
+          loadTournamentList();
+        }
+      };
+    }
+
+    // CREATE NEW TOURNAMENT
+    function openNewTournamentModal() {
+      document.getElementById('newTournamentModal').classList.remove('hidden');
+    }
+    function closeNewTournamentModal() {
+      document.getElementById('newTournamentModal').classList.add('hidden');
+    }
+
+    async function createTournament(e) {
+      e.preventDefault();
+      const title = document.getElementById('newTournTitle').value.trim();
+      const lake = document.getElementById('newTournLake').value.trim();
+      const pin = document.getElementById('newTournPin').value.trim().toUpperCase();
+      const date = document.getElementById('newTournDate').value;
+      const btn = document.getElementById('createTournBtn');
+
+      btn.disabled = true;
+      btn.innerText = 'Creating Event...';
+
+      // 1. Deactivate current
+      await client.from('tournaments').update({ is_active: false }).neq('id', '00000000-0000-0000-0000-000000000000');
+
+      // 2. Insert and activate new
+      const { data, error } = await client
+        .from('tournaments')
+        .insert([{
+          pin: pin,
+          title: title,
+          lake_name: lake,
+          event_date: date,
+          is_active: true
+        }])
+        .select()
+        .single();
+
+      btn.disabled = false;
+      btn.innerText = 'Create & Activate Event';
+
+      if (error) {
+        alert('Failed to create event: ' + error.message);
+        return;
+      }
+
+      closeNewTournamentModal();
+      document.getElementById('newTournTitle').value = '';
+      document.getElementById('newTournPin').value = '';
+
+      await loadTournamentList();
+      await loadData();
+
+      // Alert stage console and jumbotron to switch
+      broadcast.postMessage({
+        type: 'ACTIVE_TOURNAMENT_CHANGED',
+        tournamentId: data.id
+      });
     }
 
     function assignRandomBoatNumber() {
@@ -631,7 +792,7 @@
         const added = (data && data.length > 0) ? data[0] : { id: Math.random().toString(), display_name: fullName, boat_number: boatNum, phone };
         participants.push(added);
 
-        // Immediate cross-window broadcast so stage console searches reflect this angler right now
+        // Immediate broadcast to stage console
         broadcast.postMessage({
           type: 'NEW_ANGLER_REGISTERED',
           angler: added
@@ -715,7 +876,7 @@
       const text = document.getElementById('modalMessageText').value;
       const fullCopy = `RECIPIENTS:\n${phones}\n\nMESSAGE:\n${text}`;
       navigator.clipboard.writeText(fullCopy).then(() => {
-        alert('Copied to clipboard! You can paste directly into your messaging tool.');
+        alert('Copied to clipboard!');
       });
     }
 
