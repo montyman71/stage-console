@@ -14,7 +14,7 @@
     .animate-marquee {
       display: flex;
       width: max-content;
-      animation: marquee 26s linear infinite;
+      animation: marquee 24s linear infinite;
     }
     .animate-marquee:hover {
       animation-play-state: paused;
@@ -29,28 +29,28 @@
     <!-- Top Header Bar -->
     <div class="flex justify-between items-center px-1">
       <div class="flex items-center gap-3">
-        <!-- LOGO CONTAINER -->
-        <div class="relative flex items-center justify-center h-16 w-16 lg:h-20 lg:w-20 shrink-0 bg-slate-950/80 rounded-xl p-1 border border-slate-800">
+        <!-- LOGO BADGE CONTAINER -->
+        <div class="relative flex items-center justify-center h-16 w-16 lg:h-20 lg:w-20 shrink-0 bg-slate-950 rounded-xl p-1 border border-slate-800 shadow-lg">
+          <!-- Weekend Warrior Logo (Default display) -->
           <img 
             id="wwLogo" 
             src="IMG_6003.jpeg" 
             alt="Weekend Warrior Series" 
-            class="hidden h-full w-full object-contain filter drop-shadow-[0_2px_8px_rgba(239,68,68,0.5)]" 
-            onerror="tryImageFallback(this, ['IMG_6003.jpg', 'IMG_6003.JPEG', './IMG_6003.jpeg', './IMG_6003.jpg'])" 
+            class="h-full w-full object-contain filter drop-shadow-[0_2px_8px_rgba(239,68,68,0.5)] block" 
           />
+          <!-- Standard AAFL Logo -->
           <img 
             id="aaflLogo" 
             src="IMG_5884.jpeg" 
             alt="AAFL" 
-            class="h-full w-full object-contain filter drop-shadow-[0_2px_8px_rgba(59,130,246,0.5)]" 
-            onerror="tryImageFallback(this, ['IMG_5884.jpg', 'IMG_5884.JPEG', './IMG_5884.jpeg', './IMG_5884.jpg'])" 
+            class="h-full w-full object-contain filter drop-shadow-[0_2px_8px_rgba(59,130,246,0.5)] hidden" 
           />
         </div>
 
         <div>
           <div class="flex items-center gap-2">
-            <span id="seriesBadge" class="text-[9px] font-mono font-black uppercase px-2 py-0.5 rounded bg-blue-600 text-white tracking-widest">
-              AAFL TOURNAMENT TRAIL
+            <span id="seriesBadge" class="text-[9px] font-mono font-black uppercase px-2 py-0.5 rounded bg-red-600 text-white tracking-widest">
+              AAFL - WEEKEND WARRIOR SERIES
             </span>
             <span id="divisionBadge" class="hidden text-[9px] font-mono font-black uppercase px-2 py-0.5 rounded bg-amber-500 text-slate-950 tracking-wider">
               DIV
@@ -76,7 +76,6 @@
 
     <!-- Live Stage Ticker Bar -->
     <div class="grid grid-cols-12 gap-3 items-center bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-1.5 shadow-xl">
-      <!-- Angler Name -->
       <div class="col-span-8 flex flex-col justify-center">
         <span class="text-[9px] font-black uppercase tracking-widest text-blue-400">Current Bag On Scale</span>
         <h2 id="jumboAnglerName" class="text-xl lg:text-3xl font-black text-white truncate tracking-tight">
@@ -87,7 +86,6 @@
         </span>
       </div>
 
-      <!-- Live Weight Readout -->
       <div class="col-span-4 flex items-baseline justify-end gap-2 bg-slate-950/80 border border-slate-800/80 rounded-lg py-0.5 px-3">
         <span id="jumboWeight" class="font-mono text-4xl lg:text-5xl font-black text-emerald-400 tracking-tighter">0.00</span>
         <span class="text-base font-mono text-slate-500 font-black">LBS</span>
@@ -99,7 +97,6 @@
   <!-- ================= MIDDLE SECTION: COMPACT LEADERBOARD (~67vh) ================= -->
   <div class="h-[67vh] flex flex-col bg-slate-950 border border-slate-800 rounded-2xl p-3 shadow-2xl my-1 overflow-hidden">
     
-    <!-- Leaderboard Header Strip -->
     <div class="flex justify-between items-center border-b border-slate-800 pb-1.5 mb-1 shrink-0">
       <div class="flex items-center gap-2">
         <span class="text-base">🏆</span>
@@ -140,7 +137,7 @@
 
   <!-- ================= BOTTOM SECTION: SPONSOR SCROLLING TICKER (~6vh) ================= -->
   <div class="h-[6vh] bg-slate-900 border border-slate-800 rounded-lg flex items-center overflow-hidden relative shadow-inner">
-    <div class="bg-amber-500 text-slate-950 text-[9px] font-black uppercase tracking-widest px-2.5 h-full flex items-center z-10 shrink-0">
+    <div class="bg-amber-500 text-slate-950 text-[9px] font-black uppercase tracking-widest px-2.5 h-full flex items-center z-10 shrink-0 font-sans">
       OFFICIAL SPONSORS
     </div>
 
@@ -172,7 +169,7 @@
         </span>
         <span class="text-slate-600">•</span>
 
-        <!-- SET 2 (Infinite duplicate) -->
+        <!-- SET 2 (Infinite duplicate loop) -->
         <span class="flex items-center gap-1.5 text-amber-300 font-black">
           <span class="text-amber-400">★</span> AQUA TECH MARINE
         </span>
@@ -209,18 +206,6 @@
     const broadcast = new BroadcastChannel('stage_jumbotron_feed');
 
     let currentTournament = null;
-
-    // Multi-extension fallback handler for images
-    function tryImageFallback(img, candidates) {
-      if (!img.dataset.failIndex) img.dataset.failIndex = 0;
-      let idx = parseInt(img.dataset.failIndex, 10);
-      if (idx < candidates.length) {
-        img.src = candidates[idx];
-        img.dataset.failIndex = idx + 1;
-      } else {
-        img.onerror = null;
-      }
-    }
 
     function getTargetTournamentId() {
       const p = new URLSearchParams(window.location.search);
@@ -276,21 +261,23 @@
       const trailText = (tourn.trail_series || '').toLowerCase();
       const titleText = (tourn.title || '').toLowerCase();
 
-      // Flexible matching for Weekend Warrior
-      const isWW = trailText.includes('weekend warrior') || titleText.includes('weekend warrior');
+      // Check if tournament belongs to Weekend Warrior Series
+      const isWW = trailText.includes('weekend warrior') || 
+                   titleText.includes('weekend warrior') || 
+                   (!trailText && !tourn.division);
 
       const wwLogo = document.getElementById('wwLogo');
       const aaflLogo = document.getElementById('aaflLogo');
       const seriesBadge = document.getElementById('seriesBadge');
 
       if (isWW) {
-        wwLogo.classList.remove('hidden');
-        aaflLogo.classList.add('hidden');
+        wwLogo.style.display = 'block';
+        aaflLogo.style.display = 'none';
         seriesBadge.innerText = 'AAFL - WEEKEND WARRIOR SERIES';
         seriesBadge.className = 'text-[9px] font-mono font-black uppercase px-2 py-0.5 rounded bg-red-600 text-white tracking-widest';
       } else {
-        wwLogo.classList.add('hidden');
-        aaflLogo.classList.remove('hidden');
+        wwLogo.style.display = 'none';
+        aaflLogo.style.display = 'block';
         seriesBadge.innerText = (tourn.trail_series || 'AAFL TOURNAMENT TRAIL').toUpperCase();
         seriesBadge.className = 'text-[9px] font-mono font-black uppercase px-2 py-0.5 rounded bg-blue-600 text-white tracking-widest';
       }
