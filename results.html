@@ -15,16 +15,16 @@
     <div class="flex flex-wrap justify-between items-center bg-slate-900 border border-slate-800 p-5 rounded-xl shadow-xl gap-4">
       <div>
         <div class="flex items-center gap-2">
-          <span class="text-xs font-black uppercase text-amber-400 tracking-widest block">American Anglers Fishing League</span>
+          <span id="resultTrailBadge" class="text-xs font-mono font-bold px-2 py-0.5 rounded uppercase bg-blue-500/20 text-blue-300 border border-blue-500/40">AAFL TRAIL</span>
+          <span id="resultDivisionBadge" class="hidden text-xs font-mono font-bold px-2 py-0.5 rounded uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40">DIVISION</span>
           <span id="adminBadge" class="hidden text-[10px] font-mono font-bold bg-purple-500/20 text-purple-400 border border-purple-500/30 px-2 py-0.5 rounded">★ ADMIN VIEW</span>
         </div>
-        <h1 id="resultTitle" class="text-2xl font-black text-white uppercase mt-0.5">OFFICIAL TOURNAMENT STANDINGS</h1>
-        <p id="resultMeta" class="text-xs font-mono text-slate-400 mt-1">Certified Final Standings & Payout Audit</p>
+        <h1 id="resultTitle" class="text-2xl font-black text-white uppercase mt-1">OFFICIAL TOURNAMENT STANDINGS</h1>
+        <p id="resultMeta" class="text-xs font-mono text-slate-400 mt-0.5">Certified Final Standings & Payout Audit</p>
       </div>
 
       <!-- ACTION CONTROLS & SELECTOR -->
       <div class="flex flex-wrap items-center gap-2">
-        <!-- TOURNAMENT DROPDOWN SELECTOR -->
         <div class="flex items-center gap-1.5 bg-slate-950 border border-slate-700 px-3 py-1.5 rounded-lg">
           <span class="text-[11px] font-bold text-slate-400 uppercase">Select Event:</span>
           <select id="tournamentSelect" onchange="switchTournament(this.value)" class="bg-transparent text-white font-bold text-xs focus:outline-none cursor-pointer">
@@ -47,7 +47,7 @@
       </div>
     </div>
 
-    <!-- PURSE & WINNERS SUMMARY CARDS -->
+    <!-- SUMMARY CARDS -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
       <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
         <span class="text-[11px] font-bold text-slate-400 uppercase">Field Size</span>
@@ -104,8 +104,6 @@
     let currentTournament = null;
     let finalStandings = [];
     let allTournaments = [];
-    let currentUser = null;
-    let currentUserRole = 'spectator';
 
     const SCALE_PRESETS = {
       1: [1.00],
@@ -134,24 +132,6 @@
     }
 
     window.addEventListener('DOMContentLoaded', async () => {
-      // Check auth session
-      const { data: { session } } = await client.auth.getSession();
-      if (session) {
-        currentUser = session.user;
-        const { data: profile } = await client
-          .from('user_profiles')
-          .select('role')
-          .eq('id', currentUser.id)
-          .single();
-
-        if (profile && profile.role) {
-          currentUserRole = profile.role;
-          if (currentUserRole === 'admin') {
-            document.getElementById('adminBadge').classList.remove('hidden');
-          }
-        }
-      }
-
       await loadTournamentList();
       await loadTournamentResults();
     });
@@ -175,7 +155,8 @@
       allTournaments.forEach(t => {
         const opt = document.createElement('option');
         opt.value = t.id;
-        opt.innerText = `${t.title} (${t.event_date || 'TBD'})`;
+        const divText = t.division ? ` [${t.division}]` : '';
+        opt.innerText = `${t.trail_series || 'AAFL'}: ${t.title}${divText} (${t.event_date || 'TBD'})`;
         if (targetId === t.id || (!targetId && t.is_active)) {
           opt.selected = true;
         }
@@ -216,14 +197,24 @@
 
       localStorage.setItem('aafl_active_tid', currentTournament.id);
 
-      // Keep sibling navigation links synced with current event
       document.getElementById('linkStage').href = `index.html?tid=${currentTournament.id}`;
       document.getElementById('linkRegister').href = `register.html?tid=${currentTournament.id}`;
+
+      // Update Trail & Division Badges
+      const trailBadge = document.getElementById('resultTrailBadge');
+      trailBadge.innerText = currentTournament.trail_series || 'AAFL';
+      
+      const divBadge = document.getElementById('resultDivisionBadge');
+      if (currentTournament.division) {
+        divBadge.innerText = currentTournament.division;
+        divBadge.classList.remove('hidden');
+      } else {
+        divBadge.classList.add('hidden');
+      }
 
       document.getElementById('resultTitle').innerText = currentTournament.title.toUpperCase();
       document.getElementById('resultMeta').innerText = `Venue: ${currentTournament.lake_name || 'Tournament Water'} • Date: ${currentTournament.event_date || 'Certified Day'}`;
 
-      // Fetch official aggregated results
       const { data: rData } = await client
         .from('official_tournament_final_results')
         .select('*')
@@ -248,7 +239,6 @@
         return;
       }
 
-      // Compute Payout Matrix
       const entryFee = parseFloat(currentTournament.entry_fee) || 150.00;
       const houseCutPct = (parseFloat(currentTournament.house_retention_pct) || 10.00) / 100;
       const netPurse = (totalField * entryFee) * (1 - houseCutPct);
@@ -292,18 +282,20 @@
       document.getElementById('cardTotalWeight').innerText = `${totalPoundage.toFixed(2)} lbs`;
     }
 
-    // GENERATE EMBED CODE FOR WIX
     function copyWixCode() {
       if (!currentTournament) {
         alert('Tournament results have not finished loading.');
         return;
       }
 
+      const trailHeading = currentTournament.trail_series || 'American Anglers Fishing League';
+      const divisionSub = currentTournament.division ? ` • ${currentTournament.division}` : '';
+
       const iframeCode = 
 `<div style="width:100%;max-width:960px;margin:0 auto;font-family:Arial,sans-serif;background:#020617;border-radius:12px;padding:20px;border:1px solid #1e293b;color:#f8fafc;">
   <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #1e293b;padding-bottom:12px;margin-bottom:15px;">
     <div>
-      <div style="font-size:11px;font-weight:900;color:#f59e0b;letter-spacing:1px;text-transform:uppercase;">American Anglers Fishing League</div>
+      <div style="font-size:11px;font-weight:900;color:#f59e0b;letter-spacing:1px;text-transform:uppercase;">${trailHeading}${divisionSub}</div>
       <h2 style="margin:2px 0 0 0;font-size:20px;font-weight:900;color:#fff;">${currentTournament.title.toUpperCase()}</h2>
       <div style="font-size:12px;color:#94a3b8;font-family:monospace;">${currentTournament.lake_name} • ${currentTournament.event_date}</div>
     </div>
@@ -339,7 +331,7 @@
 </div>`;
 
       navigator.clipboard.writeText(iframeCode).then(() => {
-        alert('Official Wix Embed Code copied to clipboard!\n\nTo display on Wix:\n1. Open your Wix Editor and click "+ Add Elements"\n2. Select "Embed Code" -> "Popular Embeds" -> "HTML Code (iframe)"\n3. Click "Enter Code", paste, and click "Update".');
+        alert('Official Wix Embed Code copied to clipboard with Trail & Division formatting!');
       });
     }
   </script>
