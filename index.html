@@ -24,15 +24,22 @@
         </p>
       </div>
 
-      <div class="flex items-center gap-3">
-        <a href="register.html" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-black text-white transition">
-          ← Registration Desk
+      <div class="flex flex-wrap items-center gap-2">
+        <a href="checkin.html" target="_blank" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-xs font-black text-white transition flex items-center gap-1.5">
+          <span>📋 Dock Check-In</span>
+          <span id="topQueuePill" class="bg-black/30 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold">0 Queue</span>
         </a>
-        <button id="scaleBtn" onclick="connectScale()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs font-bold flex items-center gap-2">
+        <a href="results.html" class="px-3.5 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg text-xs font-black text-white transition flex items-center gap-1.5">
+          <span>🏆 Final Results & Wix</span>
+        </a>
+        <a href="register.html" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-black text-white transition">
+          Registration Desk
+        </a>
+        <button id="scaleBtn" onclick="connectScale()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs font-bold flex items-center gap-2">
           <span id="scaleDot" class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-          <span id="scaleLabel">Connect Digital Scale (USB)</span>
+          <span id="scaleLabel">Connect Scale</span>
         </button>
-        <button onclick="openJumbotron()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 rounded-lg text-xs font-black text-slate-950 transition">
+        <button onclick="openJumbotron()" class="px-3.5 py-2 bg-amber-600 hover:bg-amber-500 rounded-lg text-xs font-black text-slate-950 transition">
           Open Jumbotron ↗
         </button>
       </div>
@@ -41,52 +48,120 @@
     <!-- MAIN OPERATOR CONSOLE -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-      <!-- COLUMN 1: LIVE ANGLER SEARCH -->
-      <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl shadow-xl flex flex-col justify-between">
+      <!-- COLUMN 1: STAGE HOLDING QUEUE & QUICK SEARCH -->
+      <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl shadow-xl flex flex-col justify-between space-y-4">
         <div>
-          <label class="text-xs font-bold uppercase text-slate-400 block mb-2">Find Angler on Stage (Press '/')</label>
-          <input id="anglerSearch" placeholder="Type boat # or captain name..." class="w-full p-3 bg-slate-950 border border-slate-700 rounded-lg text-white font-medium mb-3 focus:border-blue-500 focus:outline-none" />
-          <div id="searchResults" class="space-y-1.5 max-h-56 overflow-y-auto"></div>
-
-          <div id="selectedBox" class="hidden mt-4 p-4 bg-blue-950/40 border border-blue-800/60 rounded-xl">
-            <span class="text-[10px] font-black uppercase text-blue-400 tracking-wider">Active on Bump Board</span>
+          <!-- ACTIVE BUMP BOARD HOLDER -->
+          <div id="selectedBox" class="hidden mb-4 p-4 bg-blue-950/60 border border-blue-600 rounded-xl">
+            <div class="flex justify-between items-center">
+              <span class="text-[10px] font-black uppercase text-blue-400 tracking-wider">Active On Bump Board</span>
+              <span id="queueBadgeInBox" class="text-[10px] bg-blue-900/80 border border-blue-700 text-blue-300 px-2 py-0.5 rounded font-bold font-mono">SELECTED</span>
+            </div>
             <p id="selectedName" class="text-2xl font-black text-white mt-1"></p>
+            <div id="selectedMeta" class="text-xs font-mono text-slate-300 mt-1"></div>
+          </div>
+
+          <!-- DOCK QUEUE (WHO IS NEXT) -->
+          <div class="border-b border-slate-800 pb-2 mb-3 flex justify-between items-center">
+            <h2 class="text-xs font-black uppercase text-amber-400 tracking-widest flex items-center gap-1.5">
+              <span>🛶 Stage Queue (From Dock)</span>
+            </h2>
+            <span id="queueCountBadge" class="text-xs font-mono bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-bold">0 Waiting</span>
+          </div>
+
+          <div id="stageQueueList" class="space-y-2 max-h-48 overflow-y-auto mb-4">
+            <p class="text-xs text-slate-500 text-center py-4">No boats in holding queue.</p>
+          </div>
+
+          <!-- MANUAL OVERRIDE SEARCH -->
+          <div class="border-t border-slate-800 pt-3">
+            <label class="text-[11px] font-bold uppercase text-slate-400 block mb-1">Manual Angler Search (Press '/')</label>
+            <input id="anglerSearch" placeholder="Type boat # or captain name..." class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white font-medium text-sm focus:border-blue-500 focus:outline-none" />
+            <div id="searchResults" class="mt-1 space-y-1 max-h-36 overflow-y-auto"></div>
           </div>
         </div>
 
-        <div class="border-t border-slate-800 pt-4 text-xs text-slate-500 flex justify-between items-center">
-          <span>Synced with live registration desk</span>
+        <div class="border-t border-slate-800 pt-3 text-xs text-slate-500 flex justify-between items-center">
+          <span>Synced with dock inspector & register</span>
           <span id="localRosterCount" class="font-mono text-slate-400">0 loaded</span>
         </div>
       </div>
 
-      <!-- COLUMN 2: HARDWARE SCALE STREAM -->
-      <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl shadow-xl text-center">
-        <span class="text-xs font-bold uppercase text-slate-400 block text-left">Live Scale Feed</span>
+      <!-- COLUMN 2: HARDWARE SCALE STREAM & FISH COUNTERS -->
+      <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl shadow-xl space-y-4">
+        
+        <!-- TARGET SCALE WEIGH MODE TOGGLE -->
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+          <span class="text-xs font-bold uppercase text-slate-400">Target Weight Mode:</span>
+          <div class="flex rounded-lg bg-slate-950 p-1 border border-slate-800">
+            <button id="modeTotalBtn" type="button" onclick="setWeighMode('total')" class="px-3 py-1 text-xs font-black rounded-md bg-blue-600 text-white transition">
+              Total Bag
+            </button>
+            <button id="modeBigBassBtn" type="button" onclick="setWeighMode('bigbass')" class="px-3 py-1 text-xs font-bold rounded-md text-slate-400 hover:text-white transition">
+              Big Bass Only
+            </button>
+          </div>
+        </div>
 
-        <div class="bg-slate-950 border border-slate-800 p-6 rounded-xl my-4">
+        <!-- Live Weight Readout -->
+        <div class="bg-slate-950 border border-slate-800 p-5 rounded-xl text-center">
+          <span id="modeDisplayLabel" class="text-[10px] font-mono font-bold uppercase tracking-widest text-blue-400 block mb-1">Weighing: Total 5-Fish Bag</span>
           <span id="liveWeightDisplay" class="font-mono text-6xl font-black text-emerald-400">0.00</span>
           <span class="text-lg text-slate-500 font-bold ml-1">LBS</span>
         </div>
 
-        <div class="text-left space-y-4">
+        <!-- Manual or Keypad Inputs -->
+        <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="text-xs font-bold text-slate-400 uppercase">Gross Weight (Keypad or Scale)</label>
-            <input id="grossInput" type="number" step="0.01" placeholder="0.00" class="w-full text-center text-3xl font-black bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white mt-1 focus:border-blue-500 focus:outline-none" />
+            <label class="text-[11px] font-bold text-slate-400 uppercase block">Total Bag Gross</label>
+            <input id="grossInput" type="number" step="0.01" placeholder="0.00" class="w-full text-center text-xl font-black bg-slate-950 border border-slate-700 rounded-lg p-2 text-white mt-1 focus:border-blue-500 focus:outline-none" />
+          </div>
+          <div>
+            <label class="text-[11px] font-bold text-amber-400 uppercase block">Big Bass Weight</label>
+            <input id="bigBassInput" type="number" step="0.01" placeholder="0.00" class="w-full text-center text-xl font-black bg-slate-950 border border-slate-700 rounded-lg p-2 text-amber-400 mt-1 focus:border-amber-500 focus:outline-none" />
+          </div>
+        </div>
+
+        <!-- STANDALONE STAGE FISH COUNTERS (FOR EVENTS WITHOUT DOCK CHECK-IN) -->
+        <div class="bg-slate-950 border border-slate-800 p-3.5 rounded-xl space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-black uppercase text-slate-300">Stage Fish Verification</span>
+            <span id="fishTotalBadge" class="text-[11px] font-mono text-slate-400">Total: <strong class="text-white">5</strong> fish</span>
           </div>
 
+          <!-- Alive Buttons -->
           <div>
-            <label class="text-xs font-bold text-slate-400 uppercase block mb-1">Dead Fish Count (-0.25 lb each)</label>
-            <div class="flex gap-2">
-              <button type="button" onclick="setDead(0)" class="deadBtn flex-1 py-2 bg-red-600 text-white font-bold rounded text-xs">0</button>
-              <button type="button" onclick="setDead(1)" class="deadBtn flex-1 py-2 bg-slate-800 text-slate-400 font-bold rounded text-xs">1</button>
-              <button type="button" onclick="setDead(2)" class="deadBtn flex-1 py-2 bg-slate-800 text-slate-400 font-bold rounded text-xs">2</button>
-              <button type="button" onclick="setDead(3)" class="deadBtn flex-1 py-2 bg-slate-800 text-slate-400 font-bold rounded text-xs">3</button>
-              <button type="button" onclick="setDead(4)" class="deadBtn flex-1 py-2 bg-slate-800 text-slate-400 font-bold rounded text-xs">4</button>
-              <button type="button" onclick="setDead(5)" class="deadBtn flex-1 py-2 bg-slate-800 text-slate-400 font-bold rounded text-xs">5</button>
+            <div class="flex justify-between text-[11px] text-emerald-400 font-bold uppercase mb-1">
+              <span>🟢 Alive Fish</span>
+              <span id="aliveCountLabel">5 Alive</span>
+            </div>
+            <div class="flex gap-1.5">
+              <button type="button" onclick="setAlive(0)" class="aliveBtn flex-1 py-1.5 bg-slate-800 text-slate-400 font-bold rounded text-xs">0</button>
+              <button type="button" onclick="setAlive(1)" class="aliveBtn flex-1 py-1.5 bg-slate-800 text-slate-400 font-bold rounded text-xs">1</button>
+              <button type="button" onclick="setAlive(2)" class="aliveBtn flex-1 py-1.5 bg-slate-800 text-slate-400 font-bold rounded text-xs">2</button>
+              <button type="button" onclick="setAlive(3)" class="aliveBtn flex-1 py-1.5 bg-slate-800 text-slate-400 font-bold rounded text-xs">3</button>
+              <button type="button" onclick="setAlive(4)" class="aliveBtn flex-1 py-1.5 bg-slate-800 text-slate-400 font-bold rounded text-xs">4</button>
+              <button type="button" onclick="setAlive(5)" class="aliveBtn flex-1 py-1.5 bg-emerald-600 text-white font-bold rounded text-xs">5</button>
+            </div>
+          </div>
+
+          <!-- Dead Buttons -->
+          <div>
+            <div class="flex justify-between text-[11px] text-red-400 font-bold uppercase mb-1">
+              <span>🔴 Dead Fish (-0.25 lb each)</span>
+              <span id="deadCountLabel">0 Dead</span>
+            </div>
+            <div class="flex gap-1.5">
+              <button type="button" onclick="setDead(0)" class="deadBtn flex-1 py-1.5 bg-red-600 text-white font-bold rounded text-xs">0</button>
+              <button type="button" onclick="setDead(1)" class="deadBtn flex-1 py-1.5 bg-slate-800 text-slate-400 font-bold rounded text-xs">1</button>
+              <button type="button" onclick="setDead(2)" class="deadBtn flex-1 py-1.5 bg-slate-800 text-slate-400 font-bold rounded text-xs">2</button>
+              <button type="button" onclick="setDead(3)" class="deadBtn flex-1 py-1.5 bg-slate-800 text-slate-400 font-bold rounded text-xs">3</button>
+              <button type="button" onclick="setDead(4)" class="deadBtn flex-1 py-1.5 bg-slate-800 text-slate-400 font-bold rounded text-xs">4</button>
+              <button type="button" onclick="setDead(5)" class="deadBtn flex-1 py-1.5 bg-slate-800 text-slate-400 font-bold rounded text-xs">5</button>
             </div>
           </div>
         </div>
+
       </div>
 
       <!-- COLUMN 3: OFFICIAL NET & BROADCAST LOCK -->
@@ -103,6 +178,10 @@
               <span class="text-slate-400">Dead Penalty:</span>
               <span id="penaltyDisplay" class="font-mono text-red-400 font-bold">-0.00 lbs</span>
             </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-amber-400 font-bold">Big Bass Contender:</span>
+              <span id="bigBassDisplay" class="font-mono text-amber-400 font-bold">0.00 lbs</span>
+            </div>
             <div class="border-t border-slate-800 pt-3 flex justify-between items-baseline">
               <span class="font-bold text-white text-base">Official Net:</span>
               <span id="netDisplay" class="font-mono text-4xl font-black text-blue-400">0.00 lbs</span>
@@ -116,6 +195,41 @@
       </div>
 
     </div>
+
+    <!-- LIVE STAGE LEADERBOARD -->
+    <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-xl space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <div>
+          <h2 class="text-lg font-black text-white flex items-center gap-2">
+            <span>🏆 Official Stage Leaderboard</span>
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">Real-time standings ranked by cumulative net weight</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="leaderboardCountBadge" class="text-xs bg-slate-800 text-slate-300 font-mono px-2.5 py-1 rounded font-bold">0 Weighed In</span>
+          <button onclick="loadLeaderboard()" class="text-xs text-blue-400 hover:underline font-bold">↻ Refresh Board</button>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead>
+            <tr class="text-[11px] uppercase text-slate-500 border-b border-slate-800 font-mono">
+              <th class="py-2.5 pl-2">Rank</th>
+              <th class="py-2.5">Angler / Boat</th>
+              <th class="py-2.5 text-right">Gross Wt</th>
+              <th class="py-2.5 text-right">Dead Pen</th>
+              <th class="py-2.5 text-right font-black text-emerald-400">Official Net</th>
+              <th class="py-2.5 text-right text-amber-400">Big Bass</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboardBody" class="divide-y divide-slate-800 font-mono">
+            <tr><td colspan="6" class="py-6 text-center text-slate-500">Awaiting official locks...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
 
   <script>
@@ -127,7 +241,9 @@
 
     let activeTournament = null;
     let selectedAngler = null;
+    let aliveCount = 5;
     let deadCount = 0;
+    let weighMode = 'total'; // 'total' or 'bigbass'
     let liveWeight = 0.00;
     let cachedAnglers = [];
 
@@ -155,10 +271,10 @@
         document.getElementById('stageTitle').innerText = activeTournament.title.toUpperCase();
         document.getElementById('stageSyncDot').className = 'w-3 h-3 rounded-full bg-emerald-500';
 
-        // Preload participant roster for local search speed
         await refreshParticipants();
+        await loadStageQueue();
+        await loadLeaderboard();
 
-        // Broadcast initial tournament state to Jumbotron
         broadcast.postMessage({
           type: 'TOURNAMENT_SYNC',
           tournamentTitle: activeTournament.title,
@@ -185,47 +301,110 @@
       document.getElementById('localRosterCount').innerText = `${cachedAnglers.length} boats registered`;
     }
 
-    function setupRealtimeSync() {
-      // 1. Listen to Supabase Realtime Postgres Changes
-      client
-        .channel('stage-sync')
-        .on('postgres_changes', { 
-          event: '*', 
-          schema: 'public', 
-          table: 'tournament_participants' 
-        }, () => {
-          refreshParticipants();
-        })
-        .subscribe();
+    // TOGGLE TOTAL BAG vs BIG BASS MODE
+    function setWeighMode(mode) {
+      weighMode = mode;
+      const totalBtn = document.getElementById('modeTotalBtn');
+      const bbBtn = document.getElementById('modeBigBassBtn');
+      const label = document.getElementById('modeDisplayLabel');
 
-      // 2. Listen to Browser BroadcastChannel (Instant Cross-Tab Messages)
-      broadcast.onmessage = (event) => {
-        const msg = event.data;
-        if (msg.type === 'NEW_ANGLER_REGISTERED') {
-          cachedAnglers.push(msg.angler);
-          document.getElementById('localRosterCount').innerText = `${cachedAnglers.length} boats registered`;
-        }
-      };
+      if (mode === 'total') {
+        totalBtn.className = 'px-3 py-1 text-xs font-black rounded-md bg-blue-600 text-white transition';
+        bbBtn.className = 'px-3 py-1 text-xs font-bold rounded-md text-slate-400 hover:text-white transition';
+        label.innerText = 'Weighing: Total 5-Fish Bag';
+        label.className = 'text-[10px] font-mono font-bold uppercase tracking-widest text-blue-400 block mb-1';
+      } else {
+        bbBtn.className = 'px-3 py-1 text-xs font-black rounded-md bg-amber-600 text-white transition';
+        totalBtn.className = 'px-3 py-1 text-xs font-bold rounded-md text-slate-400 hover:text-white transition';
+        label.innerText = 'Weighing: Single Big Bass Lunker';
+        label.className = 'text-[10px] font-mono font-bold uppercase tracking-widest text-amber-400 block mb-1';
+      }
     }
 
-    // SEARCH
-    const searchInput = document.getElementById('anglerSearch');
-    searchInput.addEventListener('input', (e) => {
-      const q = e.target.value.toLowerCase().trim();
-      const resBox = document.getElementById('searchResults');
-      if (q.length < 1) { resBox.innerHTML = ''; return; }
-
-      const matches = cachedAnglers.filter(a => a.display_name.toLowerCase().includes(q)).slice(0, 6);
-      resBox.innerHTML = '';
-
-      matches.forEach(a => {
-        const btn = document.createElement('button');
-        btn.className = 'w-full text-left p-2.5 bg-slate-950 hover:bg-blue-600 rounded-lg text-sm font-semibold text-white flex justify-between border border-slate-800 transition';
-        btn.innerHTML = `<span>${a.display_name}</span> <span class="text-xs bg-slate-800 px-2 py-0.5 rounded">SELECT</span>`;
-        btn.onclick = () => selectAngler(a);
-        resBox.appendChild(btn);
+    // ONBOARD FISH COUNTER CONTROLS
+    function setAlive(count) {
+      aliveCount = count;
+      document.querySelectorAll('.aliveBtn').forEach((btn, idx) => {
+        btn.className = idx === count 
+          ? 'aliveBtn flex-1 py-1.5 bg-emerald-600 text-white font-bold rounded text-xs' 
+          : 'aliveBtn flex-1 py-1.5 bg-slate-800 text-slate-400 font-bold rounded text-xs';
       });
-    });
+      document.getElementById('aliveCountLabel').innerText = `${count} Alive`;
+      updateFishVerificationDisplay();
+      recalculate();
+    }
+
+    function setDead(count) {
+      deadCount = count;
+      document.querySelectorAll('.deadBtn').forEach((btn, idx) => {
+        btn.className = idx === count 
+          ? 'deadBtn flex-1 py-1.5 bg-red-600 text-white font-bold rounded text-xs' 
+          : 'deadBtn flex-1 py-1.5 bg-slate-800 text-slate-400 font-bold rounded text-xs';
+      });
+      document.getElementById('deadCountLabel').innerText = `${count} Dead`;
+      updateFishVerificationDisplay();
+      recalculate();
+    }
+
+    function updateFishVerificationDisplay() {
+      const total = aliveCount + deadCount;
+      document.getElementById('fishTotalBadge').innerHTML = `Total: <strong class="text-white">${total}</strong> fish`;
+    }
+
+    // LOAD HOLDING QUEUE FROM DOCK CHECK-IN
+    async function loadStageQueue() {
+      if (!activeTournament) return;
+
+      const { data } = await client
+        .from('live_stage_queue')
+        .select('*')
+        .eq('tournament_id', activeTournament.id);
+
+      const queue = data || [];
+      const container = document.getElementById('stageQueueList');
+      document.getElementById('queueCountBadge').innerText = `${queue.length} Waiting`;
+      document.getElementById('topQueuePill').innerText = `${queue.length} Queue`;
+      container.innerHTML = '';
+
+      if (queue.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">No boats in holding queue.</p>';
+        return;
+      }
+
+      queue.forEach((q, idx) => {
+        const div = document.createElement('div');
+        div.className = `p-3 rounded-lg border flex justify-between items-center ${idx === 0 ? 'bg-amber-500/10 border-amber-500/40' : 'bg-slate-950 border-slate-800'}`;
+        div.innerHTML = `
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-black font-mono px-2 py-0.5 rounded ${idx === 0 ? 'bg-amber-400 text-slate-950' : 'bg-slate-800 text-slate-300'}">
+                ${idx === 0 ? 'NEXT' : `#${idx + 1}`}
+              </span>
+              <span class="text-sm font-bold text-white">${q.display_name}</span>
+            </div>
+            <div class="text-[11px] text-slate-400 font-mono mt-1">
+              🟢 ${q.alive_fish_count} Alive • 🔴 ${q.dead_fish_count} Dead
+            </div>
+          </div>
+          <button onclick="loadFromQueue('${q.participant_id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded transition shadow">
+            LOAD TO SCALE ➔
+          </button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function loadFromQueue(participantId) {
+      const target = cachedAnglers.find(a => a.id === participantId);
+      if (!target) return;
+
+      selectAngler(target);
+
+      // Pre-set dock inspection counts if available
+      setAlive(target.alive_fish_count !== undefined ? target.alive_fish_count : 5);
+      setDead(target.dead_fish_count || 0);
+      document.getElementById('selectedMeta').innerText = `Dock Count: ${target.alive_fish_count || 0} Alive | ${target.dead_fish_count || 0} Dead`;
+    }
 
     function selectAngler(a) {
       selectedAngler = a;
@@ -235,40 +414,34 @@
       searchInput.value = '';
       document.getElementById('commitBtn').disabled = false;
 
-      // Notify Jumbotron immediately
       broadcast.postMessage({
         type: 'ANGLER_ON_STAGE',
         anglerName: a.display_name
       });
     }
 
-    function setDead(count) {
-      deadCount = count;
-      document.querySelectorAll('.deadBtn').forEach((btn, idx) => {
-        btn.className = idx === count 
-          ? 'deadBtn flex-1 py-2 bg-red-600 text-white font-bold rounded text-xs' 
-          : 'deadBtn flex-1 py-2 bg-slate-800 text-slate-400 font-bold rounded text-xs';
-      });
-      recalculate();
-    }
-
     const grossInput = document.getElementById('grossInput');
+    const bigBassInput = document.getElementById('bigBassInput');
+
     grossInput.addEventListener('input', recalculate);
+    bigBassInput.addEventListener('input', recalculate);
 
     function recalculate() {
       const gross = parseFloat(grossInput.value) || 0.00;
+      const bigBass = parseFloat(bigBassInput.value) || 0.00;
       const penalty = deadCount * 0.25;
       const net = Math.max(0, gross - penalty);
 
       document.getElementById('grossDisplay').innerText = `${gross.toFixed(2)} lbs`;
       document.getElementById('penaltyDisplay').innerText = `-${penalty.toFixed(2)} lbs`;
+      document.getElementById('bigBassDisplay').innerText = `${bigBass.toFixed(2)} lbs`;
       document.getElementById('netDisplay').innerText = `${net.toFixed(2)} lbs`;
 
-      // Live mirror to Jumbotron during bag weighing
       broadcast.postMessage({
         type: 'LIVE_WEIGHT_TICKER',
         grossWeight: gross.toFixed(2),
         netWeight: net.toFixed(2),
+        bigBassWeight: bigBass.toFixed(2),
         deadPenalty: penalty.toFixed(2)
       });
     }
@@ -277,6 +450,7 @@
       if (!selectedAngler || !activeTournament) return;
 
       const gross = parseFloat(grossInput.value) || 0;
+      const bigBass = parseFloat(bigBassInput.value) || 0;
       const penalty = deadCount * 0.25;
       const net = Math.max(0, gross - penalty);
 
@@ -284,42 +458,153 @@
       commitBtn.innerText = 'Locking...';
       commitBtn.disabled = true;
 
-      const { error } = await client.from('official_stage_weights').insert({
+      // 1. Insert official locked weight record
+      const { error: weightErr } = await client.from('official_stage_weights').insert({
         tournament_id: activeTournament.id,
         participant_id: selectedAngler.id,
         gross_weight_lbs: gross,
         dead_fish_count: deadCount,
         dead_penalty_deduction: penalty,
         net_weight_lbs: net,
+        big_bass_weight_lbs: bigBass,
         is_locked: true
       });
 
-      commitBtn.innerText = 'OFFICIAL LOCK & COMMIT';
-
-      if (error) {
-        alert('Database Error: ' + error.message);
+      if (weightErr) {
+        alert('Database Error: ' + weightErr.message);
         commitBtn.disabled = false;
+        commitBtn.innerText = 'OFFICIAL LOCK & COMMIT';
         return;
       }
 
-      // Broadcast the final locked weight to the Jumbotron
+      // 2. Mark participant as weighed
+      await client
+        .from('tournament_participants')
+        .update({ 
+          checkin_status: 'WEIGHED',
+          alive_fish_count: aliveCount,
+          dead_fish_count: deadCount
+        })
+        .eq('id', selectedAngler.id);
+
+      commitBtn.innerText = 'OFFICIAL LOCK & COMMIT';
+
+      // 3. Broadcast to Jumbotron and Dock
       broadcast.postMessage({
         type: 'WEIGHT_LOCKED',
         anglerName: selectedAngler.display_name,
-        netWeight: net.toFixed(2)
+        netWeight: net.toFixed(2),
+        bigBassWeight: bigBass.toFixed(2)
       });
 
       alert(`Official Net of ${net.toFixed(2)} lbs locked for ${selectedAngler.display_name}!`);
 
       selectedAngler = null;
       grossInput.value = '';
+      bigBassInput.value = '';
+      setAlive(5);
       setDead(0);
       recalculate();
       document.getElementById('selectedBox').classList.add('hidden');
       document.getElementById('commitBtn').disabled = true;
+
+      await refreshParticipants();
+      await loadStageQueue();
+      await loadLeaderboard();
     }
 
-    // WEB SERIAL DRIVER (SCALE STREAM)
+    async function loadLeaderboard() {
+      if (!activeTournament) return;
+
+      const { data, error } = await client
+        .from('multi_day_leaderboard')
+        .select('*')
+        .eq('tournament_id', activeTournament.id)
+        .order('cumulative_net_weight', { ascending: false });
+
+      const tbody = document.getElementById('leaderboardBody');
+      const countBadge = document.getElementById('leaderboardCountBadge');
+
+      if (error || !data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="py-6 text-center text-slate-500">No anglers weighed in yet.</td></tr>';
+        countBadge.innerText = '0 Weighed In';
+        return;
+      }
+
+      countBadge.innerText = `${data.length} Weighed In`;
+      tbody.innerHTML = '';
+
+      data.forEach((row, idx) => {
+        const tr = document.createElement('tr');
+        tr.className = idx === 0 
+          ? 'bg-amber-500/10 text-amber-300 font-bold' 
+          : idx === 1 ? 'bg-slate-800/40 text-slate-200' : 'text-slate-300';
+
+        tr.innerHTML = `
+          <td class="py-2.5 pl-2 font-black">${idx === 0 ? '🥇 1' : idx === 1 ? '🥈 2' : idx === 2 ? '🥉 3' : `${idx + 1}`}</td>
+          <td class="py-2.5 font-bold text-white">${row.display_name}</td>
+          <td class="py-2.5 text-right font-mono">${parseFloat(row.total_gross_weight).toFixed(2)} lbs</td>
+          <td class="py-2.5 text-right font-mono text-red-400">-${parseFloat(row.total_dead_penalty).toFixed(2)} lbs</td>
+          <td class="py-2.5 text-right font-mono text-emerald-400 font-black text-base">${parseFloat(row.cumulative_net_weight).toFixed(2)} lbs</td>
+          <td class="py-2.5 text-right font-mono text-amber-400 font-bold">${parseFloat(row.tournament_big_bass).toFixed(2)} lbs</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      broadcast.postMessage({
+        type: 'LEADERBOARD_UPDATE',
+        leaderboard: data
+      });
+    }
+
+    function setupRealtimeSync() {
+      client
+        .channel('stage-sync')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'tournament_participants' }, () => {
+          refreshParticipants();
+          loadStageQueue();
+        })
+        .subscribe();
+
+      client
+        .channel('weights-sync')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'official_stage_weights' }, () => {
+          loadLeaderboard();
+        })
+        .subscribe();
+
+      broadcast.onmessage = (event) => {
+        const msg = event.data;
+        if (msg.type === 'QUEUE_UPDATED') {
+          loadStageQueue();
+        }
+        if (msg.type === 'NEW_ANGLER_REGISTERED') {
+          refreshParticipants();
+        }
+        if (msg.type === 'ACTIVE_TOURNAMENT_CHANGED') {
+          loadTournament();
+        }
+      };
+    }
+
+    const searchInput = document.getElementById('anglerSearch');
+    searchInput.addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase().trim();
+      const resBox = document.getElementById('searchResults');
+      if (q.length < 1) { resBox.innerHTML = ''; return; }
+
+      const matches = cachedAnglers.filter(a => a.display_name.toLowerCase().includes(q)).slice(0, 5);
+      resBox.innerHTML = '';
+
+      matches.forEach(a => {
+        const btn = document.createElement('button');
+        btn.className = 'w-full text-left p-2 bg-slate-950 hover:bg-blue-600 rounded-lg text-xs font-semibold text-white flex justify-between border border-slate-800 transition';
+        btn.innerHTML = `<span>${a.display_name}</span> <span class="bg-slate-800 px-1.5 py-0.5 rounded">SELECT</span>`;
+        btn.onclick = () => selectAngler(a);
+        resBox.appendChild(btn);
+      });
+    });
+
     async function connectScale() {
       if (!('serial' in navigator)) {
         alert('Web Serial requires Google Chrome or Microsoft Edge.');
@@ -329,7 +614,7 @@
         const port = await navigator.serial.requestPort();
         await port.open({ baudRate: 9600 });
         document.getElementById('scaleDot').className = 'w-2.5 h-2.5 rounded-full bg-emerald-400';
-        document.getElementById('scaleLabel').innerText = 'Scale Streaming (9600 Baud)';
+        document.getElementById('scaleLabel').innerText = 'Scale Streaming';
 
         const decoder = new TextDecoderStream();
         port.readable.pipeTo(decoder.writable);
@@ -348,7 +633,11 @@
               liveWeight = parseFloat(match[0]);
               document.getElementById('liveWeightDisplay').innerText = liveWeight.toFixed(2);
               if (selectedAngler) {
-                grossInput.value = liveWeight.toFixed(2);
+                if (weighMode === 'total') {
+                  grossInput.value = liveWeight.toFixed(2);
+                } else {
+                  bigBassInput.value = liveWeight.toFixed(2);
+                }
                 recalculate();
               }
             }
@@ -366,7 +655,11 @@
       }
       if (e.code === 'Space' && document.activeElement === document.body && liveWeight > 0) {
         e.preventDefault();
-        grossInput.value = liveWeight.toFixed(2);
+        if (weighMode === 'total') {
+          grossInput.value = liveWeight.toFixed(2);
+        } else {
+          bigBassInput.value = liveWeight.toFixed(2);
+        }
         recalculate();
       }
     });

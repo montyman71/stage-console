@@ -2,62 +2,101 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>AAFL Official Stage Jumbotron</title>
+  <title>AAFL Official Stage Jumbotron & Leaderboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-black text-white min-h-screen flex flex-col justify-between p-10 font-sans select-none overflow-hidden">
+<body class="bg-black text-white h-screen flex flex-col justify-between p-6 font-sans select-none overflow-hidden">
 
-  <!-- JUMBOTRON HEADER -->
-  <div class="flex justify-between items-center border-b-2 border-slate-800 pb-6">
-    <div>
-      <span class="text-xs font-black uppercase text-amber-400 tracking-widest">American Anglers Fishing League</span>
-      <h1 id="jumboTitle" class="text-4xl font-black text-white mt-1 uppercase">LAKE FORK CHAMPIONSHIP 2026</h1>
-      <p id="jumboSubtitle" class="text-sm font-mono text-slate-400 mt-0.5">OFFICIAL CERTIFIED WEIGH-IN STAGE</p>
-    </div>
-    <div class="text-right">
-      <span id="liveStatusBadge" class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider animate-pulse">
-        ● LIVE STAGE ACTIVE
-      </span>
-      <div id="clockDisplay" class="text-2xl font-mono font-bold text-slate-300 mt-2">--:--:--</div>
-    </div>
-  </div>
-
-  <!-- CENTER STAGE DISPLAY -->
-  <div class="my-auto text-center space-y-6">
-
-    <!-- ANGLER BADGE -->
-    <div class="inline-block bg-slate-900 border-2 border-slate-800 px-8 py-3 rounded-2xl shadow-2xl">
-      <span class="text-xs font-black uppercase text-blue-400 tracking-widest block">Angler On Stage</span>
-      <h2 id="jumboAnglerName" class="text-5xl lg:text-7xl font-black text-white mt-1">
-        AWAITING NEXT ANGLER...
-      </h2>
-    </div>
-
-    <!-- GIANT WEIGHT READOUT -->
-    <div class="bg-gradient-to-b from-slate-950 to-slate-900 border-4 border-slate-800 rounded-3xl p-12 max-w-3xl mx-auto shadow-2xl">
-      <div id="weightContainer">
-        <span id="jumboWeight" class="font-mono text-8xl lg:text-9xl font-black text-emerald-400 tracking-tighter">0.00</span>
-        <span class="text-3xl lg:text-4xl text-slate-500 font-bold ml-2 font-mono">LBS</span>
+  <!-- ================= TOP 25%: HEADER & LIVE STAGE TICKER ================= -->
+  <div class="h-[25vh] flex flex-col justify-between border-b-2 border-slate-800 pb-3">
+    
+    <!-- Top Title & Clock Bar -->
+    <div class="flex justify-between items-center">
+      <div class="flex items-center gap-3">
+        <span class="w-3 h-3 rounded-full bg-emerald-500 animate-ping"></span>
+        <div>
+          <h1 id="jumboTitle" class="text-xl lg:text-2xl font-black text-white uppercase tracking-wider leading-none">LAKE FORK CHAMPIONSHIP 2026</h1>
+          <p id="jumboSubtitle" class="text-[11px] font-mono text-slate-400 uppercase mt-0.5">OFFICIAL WEIGH-IN STAGE • CERTIFIED DIGITAL SCALES</p>
+        </div>
       </div>
-      <div id="statusSubtext" class="text-base font-bold text-slate-400 mt-4 uppercase tracking-widest">
-        SCALE READY
+      <div class="flex items-center gap-4">
+        <span id="liveStatusBadge" class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider">
+          ● LIVE STAGE ACTIVE
+        </span>
+        <div id="clockDisplay" class="text-xl font-mono font-bold text-slate-300">--:--:--</div>
       </div>
     </div>
 
+    <!-- Active Stage Ticker Strip -->
+    <div class="grid grid-cols-12 gap-4 items-center bg-slate-900/90 border border-slate-800 rounded-2xl p-3 my-auto shadow-2xl">
+      <!-- Angler Name -->
+      <div class="col-span-7 flex flex-col justify-center pl-2">
+        <span class="text-[10px] font-black uppercase tracking-widest text-blue-400">Current Bag On Scale</span>
+        <h2 id="jumboAnglerName" class="text-2xl lg:text-4xl font-black text-white truncate tracking-tight">
+          AWAITING NEXT ANGLER...
+        </h2>
+        <span id="statusSubtext" class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+          SCALE READY
+        </span>
+      </div>
+
+      <!-- Live Weight Readout -->
+      <div class="col-span-5 flex items-baseline justify-end gap-2 pr-2 bg-slate-950/80 border border-slate-800/80 rounded-xl py-1 px-4">
+        <span id="jumboWeight" class="font-mono text-5xl lg:text-6xl font-black text-emerald-400 tracking-tighter">0.00</span>
+        <span class="text-xl font-mono text-slate-500 font-black">LBS</span>
+      </div>
+    </div>
+
   </div>
 
-  <!-- JUMBOTRON FOOTER -->
-  <div class="flex justify-between items-end border-t-2 border-slate-800 pt-6 text-xs text-slate-500 font-mono">
-    <div>
-      <span>OFFICIAL CERTIFIED TOURNAMENT SCALES</span>
-      <span class="mx-2">•</span>
-      <span>0.25 LB DEAD FISH PENALTY DEDUCTION</span>
+  <!-- ================= BOTTOM 75%: ULTRA-HIGH VISIBILITY LEADERBOARD ================= -->
+  <div class="h-[71vh] flex flex-col bg-slate-950 border-2 border-slate-800 rounded-3xl p-5 shadow-2xl mt-3 overflow-hidden">
+    
+    <!-- Leaderboard Header Strip -->
+    <div class="flex justify-between items-center border-b-2 border-slate-800 pb-3 mb-2 shrink-0">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">🏆</span>
+        <h2 class="text-2xl lg:text-3xl font-black uppercase tracking-widest text-amber-400">
+          OFFICIAL TOURNAMENT STANDINGS
+        </h2>
+      </div>
+      <div class="flex items-center gap-3 font-mono">
+        <span class="text-xs text-slate-400 uppercase">Ranked By Cumulative Net</span>
+        <span id="jumboBoardCount" class="text-sm bg-slate-800 text-slate-200 border border-slate-700 px-3 py-1 rounded-lg font-bold">
+          0 Weighed In
+        </span>
+      </div>
     </div>
-    <div class="text-right text-slate-400">
-      AAFL STAGE BROADCAST SYSTEM
+
+    <!-- Scrollable High-Visibility Table Body -->
+    <div class="flex-1 overflow-y-auto pr-1">
+      <table class="w-full text-left font-mono border-collapse">
+        <thead class="sticky top-0 bg-slate-950 border-b border-slate-800 text-slate-400 text-sm uppercase">
+          <tr>
+            <th class="py-2.5 pl-3 w-28">Rank</th>
+            <th class="py-2.5 font-sans">Angler Team / Boat</th>
+            <th class="py-2.5 text-right font-sans w-36">Big Bass</th>
+            <th class="py-2.5 text-right font-sans pr-4 w-44">Official Net</th>
+          </tr>
+        </thead>
+        <tbody id="jumboLeaderboardBody" class="divide-y divide-slate-800/80">
+          <tr>
+            <td colspan="4" class="py-24 text-center text-slate-600 text-xl font-bold uppercase tracking-widest font-sans">
+              Awaiting Official Weight Locks...
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
+
+    <!-- Jumbotron Sub-Footer -->
+    <div class="border-t-2 border-slate-800 pt-2.5 mt-2 flex justify-between items-center text-xs font-mono text-slate-500 shrink-0">
+      <div>AAFL CERTIFIED WEIGH STAGE • 0.25 LB DEAD FISH PENALTY DEDUCTION APPLIED</div>
+      <div class="text-slate-400">REAL-TIME STANDINGS FEED</div>
+    </div>
+
   </div>
 
   <script>
@@ -67,13 +106,19 @@
     const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const broadcast = new BroadcastChannel('stage_jumbotron_feed');
 
-    // Digital Clock
+    let currentTournamentId = null;
+
+    // Running Digital Clock
     setInterval(() => {
       document.getElementById('clockDisplay').innerText = new Date().toLocaleTimeString();
     }, 1000);
 
-    // Initial Load: Fetch active tournament directly from Supabase
     window.addEventListener('DOMContentLoaded', async () => {
+      await loadInitialTournament();
+      setupRealtimeJumbotron();
+    });
+
+    async function loadInitialTournament() {
       const { data } = await client
         .from('tournaments')
         .select('*')
@@ -82,50 +127,137 @@
         .limit(1);
 
       if (data && data.length > 0) {
+        currentTournamentId = data[0].id;
         document.getElementById('jumboTitle').innerText = data[0].title.toUpperCase();
         if (data[0].lake_name) {
           document.getElementById('jumboSubtitle').innerText = `${data[0].lake_name.toUpperCase()} • OFFICIAL WEIGH-IN STAGE`;
         }
+        await loadLeaderboard();
       }
-    });
+    }
 
-    // Zero-Latency Stage Listener
-    broadcast.onmessage = (event) => {
-      const data = event.data;
+    async function loadLeaderboard() {
+      if (!currentTournamentId) return;
 
-      if (data.type === 'TOURNAMENT_SYNC') {
-        document.getElementById('jumboTitle').innerText = data.tournamentTitle.toUpperCase();
-        document.getElementById('jumboSubtitle').innerText = `${data.lakeName.toUpperCase()} • OFFICIAL WEIGH-IN STAGE`;
+      const { data } = await client
+        .from('multi_day_leaderboard')
+        .select('*')
+        .eq('tournament_id', currentTournamentId)
+        .order('cumulative_net_weight', { ascending: false });
+
+      renderLeaderboard(data || []);
+    }
+
+    function renderLeaderboard(data) {
+      const tbody = document.getElementById('jumboLeaderboardBody');
+      const badge = document.getElementById('jumboBoardCount');
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="4" class="py-24 text-center text-slate-600 text-xl font-bold uppercase tracking-widest font-sans">
+              Awaiting Official Weight Locks...
+            </td>
+          </tr>`;
+        badge.innerText = '0 Weighed In';
+        return;
       }
 
-      if (data.type === 'ANGLER_ON_STAGE') {
-        document.getElementById('jumboAnglerName').innerText = data.anglerName.toUpperCase();
-        document.getElementById('jumboWeight').innerText = '0.00';
-        document.getElementById('jumboWeight').className = 'font-mono text-8xl lg:text-9xl font-black text-emerald-400 tracking-tighter';
-        document.getElementById('statusSubtext').innerText = 'FISH ON SCALE...';
-      }
+      badge.innerText = `${data.length} Weighed In`;
+      tbody.innerHTML = '';
 
-      if (data.type === 'LIVE_WEIGHT_TICKER') {
-        document.getElementById('jumboWeight').innerText = data.netWeight;
-        document.getElementById('statusSubtext').innerText = data.deadPenalty > 0 
-          ? `GROSS: ${data.grossWeight} LBS | DEAD PENALTY: -${data.deadPenalty} LBS` 
-          : 'CALCULATING OFFICIAL NET...';
-      }
+      data.forEach((row, idx) => {
+        const netWt = parseFloat(row.cumulative_net_weight || 0).toFixed(2);
+        const bbWt = parseFloat(row.tournament_big_bass || 0);
+        const tr = document.createElement('tr');
 
-      if (data.type === 'WEIGHT_LOCKED') {
-        document.getElementById('jumboWeight').innerText = data.netWeight;
-        document.getElementById('jumboWeight').className = 'font-mono text-8xl lg:text-9xl font-black text-blue-400 tracking-tighter animate-pulse';
-        document.getElementById('statusSubtext').innerText = `★ OFFICIAL SCORE LOCKED: ${data.netWeight} LBS ★`;
+        // Dynamic Podium Styling
+        if (idx === 0) {
+          tr.className = 'bg-amber-500/15 text-amber-300 font-bold border-l-4 border-amber-400';
+        } else if (idx === 1) {
+          tr.className = 'bg-slate-800/60 text-slate-100 border-l-4 border-slate-300';
+        } else if (idx === 2) {
+          tr.className = 'bg-amber-900/20 text-amber-200 border-l-4 border-amber-600';
+        } else {
+          tr.className = 'text-slate-200 hover:bg-slate-900/50';
+        }
 
-        // Reset stage display after 10 seconds for the next boat
-        setTimeout(() => {
-          document.getElementById('jumboAnglerName').innerText = 'AWAITING NEXT ANGLER...';
+        tr.innerHTML = `
+          <td class="py-3 pl-3 text-xl lg:text-2xl font-black tracking-tight">
+            ${idx === 0 ? '🥇 1st' : idx === 1 ? '🥈 2nd' : idx === 2 ? '🥉 3rd' : `${idx + 1}th`}
+          </td>
+          <td class="py-3 font-sans text-xl lg:text-2xl font-black text-white tracking-wide truncate max-w-sm lg:max-w-xl">
+            ${row.display_name}
+          </td>
+          <td class="py-3 text-right text-lg lg:text-xl font-mono text-amber-400 font-bold">
+            ${bbWt > 0 ? `${bbWt.toFixed(2)} lbs` : '-'}
+          </td>
+          <td class="py-3 text-right pr-4 text-2xl lg:text-3xl font-black text-emerald-400 font-mono tracking-tight">
+            ${netWt} <span class="text-sm font-normal text-slate-400">lbs</span>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function setupRealtimeJumbotron() {
+      // Supabase Realtime Listener for Stage Weights
+      client
+        .channel('jumbo-weights-channel')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'official_stage_weights' }, () => {
+          loadLeaderboard();
+        })
+        .subscribe();
+
+      // Zero-Latency Local BroadcastChannel Listener
+      broadcast.onmessage = (event) => {
+        const data = event.data;
+
+        if (data.type === 'TOURNAMENT_SYNC') {
+          document.getElementById('jumboTitle').innerText = data.tournamentTitle.toUpperCase();
+          document.getElementById('jumboSubtitle').innerText = `${data.lakeName.toUpperCase()} • OFFICIAL WEIGH-IN STAGE`;
+        }
+
+        if (data.type === 'ACTIVE_TOURNAMENT_CHANGED') {
+          currentTournamentId = data.tournamentId;
+          loadInitialTournament();
+        }
+
+        if (data.type === 'LEADERBOARD_UPDATE') {
+          renderLeaderboard(data.leaderboard);
+        }
+
+        if (data.type === 'ANGLER_ON_STAGE') {
+          document.getElementById('jumboAnglerName').innerText = data.anglerName.toUpperCase();
           document.getElementById('jumboWeight').innerText = '0.00';
-          document.getElementById('jumboWeight').className = 'font-mono text-8xl lg:text-9xl font-black text-emerald-400 tracking-tighter';
-          document.getElementById('statusSubtext').innerText = 'SCALE READY';
-        }, 10000);
-      }
-    };
+          document.getElementById('jumboWeight').className = 'font-mono text-5xl lg:text-6xl font-black text-emerald-400 tracking-tighter';
+          document.getElementById('statusSubtext').innerText = 'FISH ON SCALE...';
+        }
+
+        if (data.type === 'LIVE_WEIGHT_TICKER') {
+          document.getElementById('jumboWeight').innerText = data.netWeight;
+          document.getElementById('statusSubtext').innerText = data.deadPenalty > 0 
+            ? `GROSS: ${data.grossWeight} LBS | DEAD PENALTY: -${data.deadPenalty} LBS` 
+            : 'CALCULATING OFFICIAL NET...';
+        }
+
+        if (data.type === 'WEIGHT_LOCKED') {
+          document.getElementById('jumboWeight').innerText = data.netWeight;
+          document.getElementById('jumboWeight').className = 'font-mono text-5xl lg:text-6xl font-black text-blue-400 tracking-tighter animate-pulse';
+          document.getElementById('statusSubtext').innerText = `★ OFFICIAL LOCKED: ${data.netWeight} LBS ★`;
+
+          // Reset top ticker strip after 10 seconds for the next boat
+          setTimeout(() => {
+            document.getElementById('jumboAnglerName').innerText = 'AWAITING NEXT ANGLER...';
+            document.getElementById('jumboWeight').innerText = '0.00';
+            document.getElementById('jumboWeight').className = 'font-mono text-5xl lg:text-6xl font-black text-emerald-400 tracking-tighter';
+            document.getElementById('statusSubtext').innerText = 'SCALE READY';
+          }, 10000);
+
+          loadLeaderboard();
+        }
+      };
+    }
   </script>
 </body>
 </html>

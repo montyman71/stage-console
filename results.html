@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AAFL Official Tournament Results & Wix Embed Hub</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans p-6">
+
+  <div class="max-w-6xl mx-auto space-y-6">
+
+    <!-- TOP BAR -->
+    <div class="flex flex-wrap justify-between items-center bg-slate-900 border border-slate-800 p-5 rounded-xl shadow-xl gap-4">
+      <div>
+        <span class="text-xs font-black uppercase text-amber-400 tracking-widest block">American Anglers Fishing League</span>
+        <h1 id="resultTitle" class="text-2xl font-black text-white uppercase mt-0.5">OFFICIAL TOURNAMENT STANDINGS</h1>
+        <p id="resultMeta" class="text-xs font-mono text-slate-400 mt-1">Certified Final Standings & Payout Audit</p>
+      </div>
+
+      <div class="flex flex-wrap gap-2">
+        <button onclick="copyWixCode()" class="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-black text-xs rounded-lg shadow-lg flex items-center gap-1.5 transition">
+          <span>🌐 Copy Wix HTML Embed Code</span>
+        </button>
+        <button onclick="window.print()" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-lg border border-slate-700">
+          🖨️ Print Sheet
+        </button>
+        <a href="index.html" class="px-3.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-lg">
+          ← Stage Console
+        </a>
+      </div>
+    </div>
+
+    <!-- PURSE & WINNERS SUMMARY CARDS -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+        <span class="text-[11px] font-bold text-slate-400 uppercase">Field Size</span>
+        <div id="cardField" class="text-2xl font-mono font-black text-white mt-1">0 Boats</div>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+        <span class="text-[11px] font-bold text-emerald-400 uppercase">Champion Net Wt</span>
+        <div id="cardWinningWeight" class="text-2xl font-mono font-black text-emerald-400 mt-1">0.00 lbs</div>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+        <span class="text-[11px] font-bold text-amber-400 uppercase">Overall Big Bass</span>
+        <div id="cardBigBass" class="text-2xl font-mono font-black text-amber-400 mt-1">0.00 lbs</div>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+        <span class="text-[11px] font-bold text-blue-400 uppercase">Total Net Bag</span>
+        <div id="cardTotalWeight" class="text-2xl font-mono font-black text-blue-400 mt-1">0.00 lbs</div>
+      </div>
+    </div>
+
+    <!-- CERTIFIED STANDINGS TABLE -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h2 class="text-base font-black text-white uppercase tracking-wider">🏆 Certified Final Results</h2>
+        <span id="payoutNotice" class="text-xs text-amber-400 font-bold font-mono">Official AAFL Purse Tier Applied</span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead>
+            <tr class="text-[11px] uppercase text-slate-400 border-b border-slate-800 font-mono">
+              <th class="py-3 pl-2">Rank</th>
+              <th class="py-3">Boat # / Angler Team</th>
+              <th class="py-3 text-right">Gross Wt</th>
+              <th class="py-3 text-right">Dead Pen</th>
+              <th class="py-3 text-right font-black text-emerald-400">Official Net</th>
+              <th class="py-3 text-right text-amber-400">Big Bass</th>
+              <th class="py-3 text-right pr-2 font-bold text-emerald-300">Prize Payout</th>
+            </tr>
+          </thead>
+          <tbody id="resultsTableBody" class="divide-y divide-slate-800 font-mono">
+            <tr><td colspan="7" class="py-8 text-center text-slate-500">Loading verified results...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://gjoxrosyboapwfqlfdye.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdqb3hyb3N5Ym9hcHdmcWxmZHllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3MDEwMzQsImV4cCI6MjEwNDI3NzAzNH0.SFcX-NYJgL8lGv5QP2HXN83eaL7x2v0KCJonJXYoUAE';
+    const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let currentTournament = null;
+    let finalStandings = [];
+
+    const SCALE_PRESETS = {
+      1: [1.00],
+      2: [0.65, 0.35],
+      3: [0.50, 0.30, 0.20],
+      4: [0.45, 0.28, 0.17, 0.10],
+      5: [0.40, 0.25, 0.16, 0.11, 0.08],
+      7: [0.35, 0.22, 0.14, 0.10, 0.08, 0.06, 0.05],
+      10: [0.30, 0.18, 0.12, 0.09, 0.08, 0.07, 0.06, 0.04, 0.03, 0.03]
+    };
+
+    function getTier(count) {
+      if (count <= 1) return SCALE_PRESETS[1];
+      if (count <= 5) return SCALE_PRESETS[1];
+      if (count <= 10) return SCALE_PRESETS[2];
+      if (count <= 20) return SCALE_PRESETS[3];
+      if (count <= 35) return SCALE_PRESETS[4];
+      if (count <= 50) return SCALE_PRESETS[5];
+      if (count <= 75) return SCALE_PRESETS[7];
+      return SCALE_PRESETS[10];
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      await loadTournamentResults();
+    });
+
+    async function loadTournamentResults() {
+      const { data: tData } = await client
+        .from('tournaments')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (!tData || tData.length === 0) {
+        document.getElementById('resultTitle').innerText = 'NO ACTIVE TOURNAMENT RECORD';
+        return;
+      }
+
+      currentTournament = tData[0];
+      document.getElementById('resultTitle').innerText = currentTournament.title.toUpperCase();
+      document.getElementById('resultMeta').innerText = `Venue: ${currentTournament.lake_name || 'Lake Fork'} | Certified Date: ${currentTournament.event_date}`;
+
+      const { data: rData } = await client
+        .from('official_tournament_final_results')
+        .select('*')
+        .eq('tournament_id', currentTournament.id)
+        .order('final_net_weight_lbs', { ascending: false });
+
+      finalStandings = rData || [];
+      renderFinalResults();
+    }
+
+    function renderFinalResults() {
+      const tbody = document.getElementById('resultsTableBody');
+      const totalField = finalStandings.length;
+
+      document.getElementById('cardField').innerText = `${totalField} Boats`;
+
+      if (totalField === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="py-8 text-center text-slate-500">No locked bags on official record.</td></tr>';
+        return;
+      }
+
+      // Compute Payout Matrix
+      const entryFee = parseFloat(currentTournament.entry_fee) || 150.00;
+      const houseCutPct = (parseFloat(currentTournament.house_retention_pct) || 10.00) / 100;
+      const netPurse = (totalField * entryFee) * (1 - houseCutPct);
+      const tier = getTier(totalField);
+
+      let totalPoundage = 0;
+      let highestBass = 0;
+
+      tbody.innerHTML = '';
+
+      finalStandings.forEach((row, idx) => {
+        const netWt = parseFloat(row.final_net_weight_lbs) || 0;
+        const bbWt = parseFloat(row.tournament_big_bass_lbs) || 0;
+        totalPoundage += netWt;
+        if (bbWt > highestBass) highestBass = bbWt;
+
+        // Payout determination
+        let prizeMoney = 0;
+        if (idx < tier.length) {
+          prizeMoney = netPurse * tier[idx];
+        }
+
+        const tr = document.createElement('tr');
+        tr.className = idx === 0 
+          ? 'bg-amber-500/10 text-amber-300 font-bold text-base' 
+          : idx === 1 ? 'bg-slate-800/40 text-slate-200' : 'text-slate-300';
+
+        tr.innerHTML = `
+          <td class="py-3 pl-2 font-black">${idx === 0 ? '🥇 1st' : idx === 1 ? '🥈 2nd' : idx === 2 ? '🥉 3rd' : `${idx + 1}th`}</td>
+          <td class="py-3 font-bold text-white">${row.angler_team}</td>
+          <td class="py-3 text-right font-mono">${parseFloat(row.total_gross_lbs).toFixed(2)}</td>
+          <td class="py-3 text-right font-mono text-red-400">-${parseFloat(row.total_dead_penalty_lbs).toFixed(2)}</td>
+          <td class="py-3 text-right font-mono text-emerald-400 font-black">${netWt.toFixed(2)} lbs</td>
+          <td class="py-3 text-right font-mono text-amber-400">${bbWt > 0 ? `${bbWt.toFixed(2)} lbs` : '-'}</td>
+          <td class="py-3 text-right pr-2 font-black font-mono text-emerald-400">${prizeMoney > 0 ? `$${prizeMoney.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('cardWinningWeight').innerText = `${parseFloat(finalStandings[0].final_net_weight_lbs).toFixed(2)} lbs`;
+      document.getElementById('cardBigBass').innerText = `${highestBass.toFixed(2)} lbs`;
+      document.getElementById('cardTotalWeight').innerText = `${totalPoundage.toFixed(2)} lbs`;
+    }
+
+    // GENERATE COPYABLE WIX EMBED CODE
+    function copyWixCode() {
+      if (!currentTournament) {
+        alert('Tournament results have not finished loading.');
+        return;
+      }
+
+      const iframeCode = 
+`<div style="width:100%;max-width:960px;margin:0 auto;font-family:Arial,sans-serif;background:#020617;border-radius:12px;padding:20px;border:1px solid #1e293b;color:#f8fafc;">
+  <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #1e293b;padding-bottom:12px;margin-bottom:15px;">
+    <div>
+      <div style="font-size:11px;font-weight:900;color:#f59e0b;letter-spacing:1px;text-transform:uppercase;">American Anglers Fishing League</div>
+      <h2 style="margin:2px 0 0 0;font-size:20px;font-weight:900;color:#fff;">${currentTournament.title.toUpperCase()}</h2>
+      <div style="font-size:12px;color:#94a3b8;font-family:monospace;">${currentTournament.lake_name} • ${currentTournament.event_date}</div>
+    </div>
+    <div style="background:#0f172a;border:1px solid #1e293b;padding:6px 12px;border-radius:8px;text-align:right;">
+      <span style="font-size:10px;font-weight:bold;color:#10b981;display:block;">OFFICIAL CERTIFIED</span>
+      <span style="font-size:12px;font-family:monospace;font-weight:bold;color:#cbd5e1;">${finalStandings.length} Boats Weighed</span>
+    </div>
+  </div>
+  <table style="width:100%;border-collapse:collapse;font-size:13px;text-align:left;font-family:monospace;">
+    <thead>
+      <tr style="border-bottom:1px solid #334155;color:#94a3b8;font-size:11px;text-transform:uppercase;">
+        <th style="padding:8px 4px;">Rank</th>
+        <th style="padding:8px 4px;">Angler / Team</th>
+        <th style="padding:8px 4px;text-align:right;">Net Weight</th>
+        <th style="padding:8px 4px;text-align:right;">Big Bass</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${finalStandings.map((r, i) => `
+        <tr style="border-bottom:1px solid #0f172a;${i === 0 ? 'background:rgba(245,158,11,0.1);color:#fde68a;font-weight:bold;' : 'color:#e2e8f0;'}">
+          <td style="padding:10px 4px;">${i === 0 ? '🥇 1st' : i === 1 ? '🥈 2nd' : i === 2 ? '🥉 3rd' : `${i + 1}th`}</td>
+          <td style="padding:10px 4px;font-family:Arial,sans-serif;font-weight:bold;">${r.angler_team}</td>
+          <td style="padding:10px 4px;text-align:right;color:#34d399;font-weight:bold;font-size:14px;">${parseFloat(r.final_net_weight_lbs).toFixed(2)} lbs</td>
+          <td style="padding:10px 4px;text-align:right;color:#fbbf24;">${parseFloat(r.tournament_big_bass_lbs) > 0 ? parseFloat(r.tournament_big_bass_lbs).toFixed(2) + ' lbs' : '-'}</td>
+        </tr>
+      `).join('')}
+    </tbody>
+  </table>
+  <div style="border-top:1px solid #1e293b;margin-top:15px;padding-top:10px;font-size:11px;color:#64748b;display:flex;justify-content:space-between;">
+    <span>Certified by AAFL Bump Board Matrix</span>
+    <span>Live Standings Feed</span>
+  </div>
+</div>`;
+
+      navigator.clipboard.writeText(iframeCode).then(() => {
+        alert('Official Wix Embed Code copied to clipboard!\n\nTo display on your site:\n1. In Wix Editor, click "+ Add Elements"\n2. Choose "Embed Code" -> "Popular Embeds" -> "HTML Code (iframe)"\n3. Click "Enter Code" and paste.');
+      });
+    }
+  </script>
+</body>
+</html>

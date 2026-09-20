@@ -9,6 +9,26 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans p-6">
 
+  <!-- DIRECTOR PASSCODE LOGIN OVERLAY -->
+  <div id="authGate" class="fixed inset-0 bg-slate-950/95 flex items-center justify-center p-4 z-50">
+    <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl max-w-sm w-full shadow-2xl space-y-5 text-center">
+      <div class="inline-block p-3 bg-blue-600/10 border border-blue-500/30 rounded-2xl">
+        <span class="text-3xl">🔐</span>
+      </div>
+      <div>
+        <h2 class="text-lg font-black text-white uppercase tracking-wider">Tournament Director Gate</h2>
+        <p class="text-xs text-slate-400 mt-1">Enter Master Passcode to manage fees, flights, and events</p>
+      </div>
+      <form onsubmit="handleAuth(event)" class="space-y-3">
+        <input type="password" id="passcodeInput" placeholder="Master Passcode" required class="w-full p-3 bg-slate-950 border border-slate-700 rounded-lg text-white text-center font-mono text-lg tracking-widest focus:border-blue-500 focus:outline-none" />
+        <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase tracking-widest rounded-lg transition shadow-lg">
+          Unlock Director Panel
+        </button>
+      </form>
+      <p class="text-[11px] text-slate-500">Default Access: <code class="font-mono text-slate-400">AAFL2026</code></p>
+    </div>
+  </div>
+
   <div class="max-w-7xl mx-auto space-y-6">
 
     <!-- TOP BAR & TOURNAMENT SWITCHER -->
@@ -33,11 +53,14 @@
         <button onclick="openNewTournamentModal()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-xs font-black text-white transition">
           + New Event
         </button>
+        <a href="results.html" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 rounded-lg text-xs font-black text-white transition">
+          🏆 Final Results & Wix
+        </a>
         <a href="index.html" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-black text-white transition">
           Stage Console →
         </a>
-        <button onclick="openJumbotron()" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 rounded-lg text-xs font-black text-slate-950 transition">
-          Jumbotron ↗
+        <button onclick="lockDirectorPanel()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold text-slate-400">
+          🔒 Lock
         </button>
       </div>
     </div>
@@ -262,20 +285,20 @@
       <form id="newTournForm" onsubmit="createTournament(event)" class="space-y-3">
         <div>
           <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Event Title</label>
-          <input type="text" id="newTournTitle" required placeholder="e.g. Sam Rayburn Open 2026" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm" />
+          <input type="text" id="newTournTitle" required placeholder="e.g. Sam Rayburn Open 2026" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" />
         </div>
         <div>
           <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Lake / Body of Water</label>
-          <input type="text" id="newTournLake" required placeholder="e.g. Sam Rayburn Reservoir" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm" />
+          <input type="text" id="newTournLake" required placeholder="e.g. Sam Rayburn Reservoir" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" />
         </div>
         <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Unique PIN</label>
-            <input type="text" id="newTournPin" required placeholder="RAYBURN26" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm uppercase font-mono" />
+            <input type="text" id="newTournPin" required placeholder="RAYBURN26" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm uppercase font-mono focus:border-blue-500 focus:outline-none" />
           </div>
           <div>
             <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Event Date</label>
-            <input type="date" id="newTournDate" required class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm" />
+            <input type="date" id="newTournDate" required class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" />
           </div>
         </div>
         <button type="submit" id="createTournBtn" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase rounded-lg shadow-lg transition mt-2">
@@ -285,29 +308,8 @@
     </div>
   </div>
 
-  <!-- BULK SMS MODAL -->
-  <div id="bulkSmsModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-lg w-full shadow-2xl space-y-4">
-      <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-        <h3 id="modalTitle" class="text-lg font-black text-white">FLIGHT DISPATCH</h3>
-        <button onclick="closeModal()" class="text-slate-500 hover:text-white font-bold">✕</button>
-      </div>
-      <div>
-        <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Recipients (<span id="modalRecipientCount">0</span> Captains)</label>
-        <textarea id="modalPhoneList" readonly rows="2" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-xs font-mono text-slate-300 focus:outline-none"></textarea>
-      </div>
-      <div>
-        <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Message Text</label>
-        <textarea id="modalMessageText" rows="5" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-xs font-mono text-amber-300 focus:outline-none"></textarea>
-      </div>
-      <div class="grid grid-cols-2 gap-3 pt-2">
-        <button onclick="copyFlightBroadcast()" class="py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-lg text-xs border border-slate-700">📋 Copy To Clipboard</button>
-        <a id="modalSmsAnchor" href="#" class="py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-lg text-xs text-center flex items-center justify-center gap-1 shadow-lg">💬 Open Messaging App</a>
-      </div>
-    </div>
-  </div>
-
   <script>
+    const MASTER_PASSCODE = 'AAFL2026';
     const SUPABASE_URL = 'https://gjoxrosyboapwfqlfdye.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdqb3hyb3N5Ym9hcHdmcWxmZHllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3MDEwMzQsImV4cCI6MjEwNDI3NzAzNH0.SFcX-NYJgL8lGv5QP2HXN83eaL7x2v0KCJonJXYoUAE';
 
@@ -338,9 +340,31 @@
       return SCALE_PRESETS[10];
     }
 
+    // AUTH GATING
+    function handleAuth(e) {
+      e.preventDefault();
+      const entered = document.getElementById('passcodeInput').value;
+      if (entered === MASTER_PASSCODE) {
+        sessionStorage.setItem('aafl_director_auth', 'true');
+        document.getElementById('authGate').classList.add('hidden');
+      } else {
+        alert('Invalid Director Passcode');
+      }
+    }
+
+    function lockDirectorPanel() {
+      sessionStorage.removeItem('aafl_director_auth');
+      document.getElementById('authGate').classList.remove('hidden');
+    }
+
     window.addEventListener('DOMContentLoaded', async () => {
-      document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
-      document.getElementById('newTournDate').value = new Date().toISOString().split('T')[0];
+      if (sessionStorage.getItem('aafl_director_auth') === 'true') {
+        document.getElementById('authGate').classList.add('hidden');
+      }
+
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('dateInput').value = today;
+      document.getElementById('newTournDate').value = today;
 
       ['inputEntryFee', 'inputBbFee', 'inputHouseCut', 'inputPlacesPaid'].forEach(id => {
         document.getElementById(id).addEventListener('input', calculatePurseAndPayout);
@@ -357,7 +381,6 @@
       setupCrossScreenListeners();
     });
 
-    // Populate dropdown with all database tournaments
     async function loadTournamentList() {
       const { data } = await client
         .from('tournaments')
@@ -375,7 +398,6 @@
       });
     }
 
-    // Switch active tournament from the dropdown
     async function switchTournament(tournamentId) {
       if (!tournamentId) return;
       document.getElementById('syncDot').className = 'w-3 h-3 rounded-full bg-amber-500 animate-pulse';
@@ -389,7 +411,6 @@
       await loadTournamentList();
       await loadData();
 
-      // Broadcast switch to stage console and jumbotron
       broadcast.postMessage({
         type: 'ACTIVE_TOURNAMENT_CHANGED',
         tournamentId: tournamentId
@@ -421,7 +442,6 @@
         if (activeTournament.first_weighin_time) document.getElementById('weighinTimeInput').value = activeTournament.first_weighin_time.substring(0, 5);
         if (activeTournament.boats_per_flight) document.getElementById('boatsPerFlightInput').value = activeTournament.boats_per_flight;
 
-        // Fetch roster
         const { data: pData } = await client
           .from('tournament_participants')
           .select('*')
@@ -434,14 +454,6 @@
         updateFlightScheduleDisplay();
         assignRandomBoatNumber();
 
-        // Broadcast to Jumbotron so displays lock on
-        broadcast.postMessage({
-          type: 'TOURNAMENT_SYNC',
-          tournamentTitle: activeTournament.title,
-          lakeName: activeTournament.lake_name || 'Lake Fork',
-          eventDate: activeTournament.event_date
-        });
-
       } catch (err) {
         console.error('Initialization error:', err);
         document.getElementById('tournamentHeading').innerText = 'CONNECTION / CORS ERROR';
@@ -450,7 +462,6 @@
     }
 
     function setupCrossScreenListeners() {
-      // Listen for WebSocket updates from Supabase
       client
         .channel('register-sync')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'tournaments' }, () => {
@@ -458,7 +469,6 @@
         })
         .subscribe();
 
-      // Listen for BroadcastChannel events
       broadcast.onmessage = (event) => {
         if (event.data.type === 'ACTIVE_TOURNAMENT_CHANGED') {
           loadData();
@@ -467,7 +477,6 @@
       };
     }
 
-    // CREATE NEW TOURNAMENT
     function openNewTournamentModal() {
       document.getElementById('newTournamentModal').classList.remove('hidden');
     }
@@ -486,42 +495,41 @@
       btn.disabled = true;
       btn.innerText = 'Creating Event...';
 
-      // 1. Deactivate current
-      await client.from('tournaments').update({ is_active: false }).neq('id', '00000000-0000-0000-0000-000000000000');
+      try {
+        const { data, error } = await client.rpc('create_and_activate_tournament', {
+          p_pin: pin,
+          p_title: title,
+          p_lake: lake,
+          p_date: date
+        });
 
-      // 2. Insert and activate new
-      const { data, error } = await client
-        .from('tournaments')
-        .insert([{
-          pin: pin,
-          title: title,
-          lake_name: lake,
-          event_date: date,
-          is_active: true
-        }])
-        .select()
-        .single();
+        btn.disabled = false;
+        btn.innerText = 'Create & Activate Event';
 
-      btn.disabled = false;
-      btn.innerText = 'Create & Activate Event';
+        if (error) {
+          alert('Failed to create event: ' + error.message);
+          return;
+        }
 
-      if (error) {
-        alert('Failed to create event: ' + error.message);
-        return;
+        closeNewTournamentModal();
+        document.getElementById('newTournTitle').value = '';
+        document.getElementById('newTournPin').value = '';
+
+        await loadTournamentList();
+        await loadData();
+
+        broadcast.postMessage({
+          type: 'ACTIVE_TOURNAMENT_CHANGED',
+          tournamentId: data.id
+        });
+
+        alert(`Event "${title}" created and activated!`);
+
+      } catch (err) {
+        btn.disabled = false;
+        btn.innerText = 'Create & Activate Event';
+        alert('Connection Error: ' + err.message);
       }
-
-      closeNewTournamentModal();
-      document.getElementById('newTournTitle').value = '';
-      document.getElementById('newTournPin').value = '';
-
-      await loadTournamentList();
-      await loadData();
-
-      // Alert stage console and jumbotron to switch
-      broadcast.postMessage({
-        type: 'ACTIVE_TOURNAMENT_CHANGED',
-        tournamentId: data.id
-      });
     }
 
     function assignRandomBoatNumber() {
@@ -598,9 +606,7 @@
           <td class="py-2 text-emerald-400 font-bold">${launch}</td>
           <td class="py-2 text-amber-400 font-bold">${weigh}</td>
           <td class="py-2 text-right">
-            <button onclick="triggerFlightBroadcast(${f}, '${launch}', '${weigh}')" class="px-2 py-0.5 bg-emerald-600/20 hover:bg-emerald-600 border border-emerald-500/40 text-emerald-400 hover:text-white rounded text-[10px] font-bold transition">
-              💬 Blast (${flightAnglers.length})
-            </button>
+            <span class="text-[10px] font-mono text-slate-400 font-bold">${flightAnglers.length} Boats</span>
           </td>
         `;
         tbody.appendChild(row);
@@ -736,12 +742,6 @@
         alert('Tournament Schedule Settings Saved!');
         updateFlightScheduleDisplay();
         renderRoster();
-        broadcast.postMessage({
-          type: 'TOURNAMENT_SYNC',
-          tournamentTitle: activeTournament.title,
-          lakeName: lake,
-          eventDate: date
-        });
       }
     }
 
@@ -792,7 +792,6 @@
         const added = (data && data.length > 0) ? data[0] : { id: Math.random().toString(), display_name: fullName, boat_number: boatNum, phone };
         participants.push(added);
 
-        // Immediate broadcast to stage console
         broadcast.postMessage({
           type: 'NEW_ANGLER_REGISTERED',
           angler: added
@@ -807,78 +806,12 @@
         updateFlightScheduleDisplay();
         assignRandomBoatNumber();
 
-        if (phone) {
-          const lake = document.getElementById('lakeInput').value || 'Lake Fork';
-          const rawPhone = phone.replace(/[^0-9]/g, '');
-          const smsText = encodeURIComponent(
-            `AAFL REGISTRATION CONFIRMED:\n` +
-            `Venue: ${lake}\n` +
-            `Boat: #${boatNum}\n` +
-            `Flight: ${flightNum}\n` +
-            `Launch: ${launchTime}\n` +
-            `Check-In: ${weighinTime}\n` +
-            `See you on the water!`
-          );
-          window.location.href = `sms:${rawPhone}?body=${smsText}`;
-        }
-
       } catch (err) {
         btn.innerText = '+ CONFIRM REGISTRATION & DISPATCH';
         btn.disabled = false;
         alert('Error: ' + err.message);
       }
     });
-
-    function triggerFlightBroadcast(flightNumber, launchTime, weighinTime) {
-      const perFlight = parseInt(document.getElementById('boatsPerFlightInput').value, 10) || 25;
-      const lake = document.getElementById('lakeInput').value || 'Lake Fork';
-      const date = document.getElementById('dateInput').value || 'Tournament Day';
-
-      const flightParticipants = participants.filter(p => {
-        const bNum = p.boat_number || extractBoatNum(p.display_name);
-        return Math.ceil(bNum / perFlight) === flightNumber;
-      });
-
-      const validNumbers = flightParticipants
-        .filter(p => p.phone && p.phone.replace(/[^0-9]/g, '').length >= 10)
-        .map(p => p.phone.replace(/[^0-9]/g, ''));
-
-      if (validNumbers.length === 0) {
-        alert(`No phone numbers on record for registered captains in Flight ${flightNumber}.`);
-        return;
-      }
-
-      const broadcastMsg = 
-        `AAFL FLIGHT ${flightNumber} NOTICE:\n` +
-        `Venue: ${lake} (${date})\n` +
-        `Flight ${flightNumber} Launch: ${launchTime}\n` +
-        `Weigh-In Due: ${weighinTime}\n` +
-        `Check in at the official buoys before ${weighinTime}. Good luck!`;
-
-      const recipientDelim = navigator.userAgent.match(/Android/i) ? ';' : ',';
-      const recipientString = validNumbers.join(recipientDelim);
-
-      document.getElementById('modalTitle').innerText = `BROADCAST TO FLIGHT ${flightNumber}`;
-      document.getElementById('modalRecipientCount').innerText = validNumbers.length;
-      document.getElementById('modalPhoneList').value = validNumbers.join(', ');
-      document.getElementById('modalMessageText').value = broadcastMsg;
-
-      document.getElementById('modalSmsAnchor').href = `sms:${recipientString}?body=${encodeURIComponent(broadcastMsg)}`;
-      document.getElementById('bulkSmsModal').classList.remove('hidden');
-    }
-
-    function closeModal() {
-      document.getElementById('bulkSmsModal').classList.add('hidden');
-    }
-
-    function copyFlightBroadcast() {
-      const phones = document.getElementById('modalPhoneList').value;
-      const text = document.getElementById('modalMessageText').value;
-      const fullCopy = `RECIPIENTS:\n${phones}\n\nMESSAGE:\n${text}`;
-      navigator.clipboard.writeText(fullCopy).then(() => {
-        alert('Copied to clipboard!');
-      });
-    }
 
     async function removeParticipant(id) {
       if (!confirm('Remove this boat?')) return;
@@ -888,10 +821,6 @@
       calculatePurseAndPayout();
       updateFlightScheduleDisplay();
       assignRandomBoatNumber();
-    }
-
-    function openJumbotron() {
-      window.open('jumbotron.html', '_blank', 'width=1280,height=720');
     }
   </script>
 </body>
