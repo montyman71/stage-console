@@ -11,23 +11,38 @@
 
   <div class="max-w-6xl mx-auto space-y-6">
 
-    <!-- TOP BAR -->
+    <!-- TOP HEADER & CONTROLS -->
     <div class="flex flex-wrap justify-between items-center bg-slate-900 border border-slate-800 p-5 rounded-xl shadow-xl gap-4">
       <div>
-        <span class="text-xs font-black uppercase text-amber-400 tracking-widest block">American Anglers Fishing League</span>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-black uppercase text-amber-400 tracking-widest block">American Anglers Fishing League</span>
+          <span id="adminBadge" class="hidden text-[10px] font-mono font-bold bg-purple-500/20 text-purple-400 border border-purple-500/30 px-2 py-0.5 rounded">★ ADMIN VIEW</span>
+        </div>
         <h1 id="resultTitle" class="text-2xl font-black text-white uppercase mt-0.5">OFFICIAL TOURNAMENT STANDINGS</h1>
         <p id="resultMeta" class="text-xs font-mono text-slate-400 mt-1">Certified Final Standings & Payout Audit</p>
       </div>
 
-      <div class="flex flex-wrap gap-2">
+      <!-- ACTION CONTROLS & SELECTOR -->
+      <div class="flex flex-wrap items-center gap-2">
+        <!-- TOURNAMENT DROPDOWN SELECTOR -->
+        <div class="flex items-center gap-1.5 bg-slate-950 border border-slate-700 px-3 py-1.5 rounded-lg">
+          <span class="text-[11px] font-bold text-slate-400 uppercase">Select Event:</span>
+          <select id="tournamentSelect" onchange="switchTournament(this.value)" class="bg-transparent text-white font-bold text-xs focus:outline-none cursor-pointer">
+            <option value="">Loading events...</option>
+          </select>
+        </div>
+
         <button onclick="copyWixCode()" class="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-black text-xs rounded-lg shadow-lg flex items-center gap-1.5 transition">
-          <span>🌐 Copy Wix HTML Embed Code</span>
+          <span>🌐 Copy Wix Embed</span>
         </button>
         <button onclick="window.print()" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-lg border border-slate-700">
-          🖨️ Print Sheet
+          🖨️ Print
         </button>
-        <a href="index.html" class="px-3.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-lg">
+        <a id="linkStage" href="index.html" class="px-3.5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-lg">
           ← Stage Console
+        </a>
+        <a id="linkRegister" href="register.html" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-lg">
+          Registration
         </a>
       </div>
     </div>
@@ -88,6 +103,9 @@
 
     let currentTournament = null;
     let finalStandings = [];
+    let allTournaments = [];
+    let currentUser = null;
+    let currentUserRole = 'spectator';
 
     const SCALE_PRESETS = {
       1: [1.00],
@@ -110,27 +128,102 @@
       return SCALE_PRESETS[10];
     }
 
+    function getTargetTournamentId() {
+      const p = new URLSearchParams(window.location.search);
+      return p.get('tid') || localStorage.getItem('aafl_active_tid');
+    }
+
     window.addEventListener('DOMContentLoaded', async () => {
+      // Check auth session
+      const { data: { session } } = await client.auth.getSession();
+      if (session) {
+        currentUser = session.user;
+        const { data: profile } = await client
+          .from('user_profiles')
+          .select('role')
+          .eq('id', currentUser.id)
+          .single();
+
+        if (profile && profile.role) {
+          currentUserRole = profile.role;
+          if (currentUserRole === 'admin') {
+            document.getElementById('adminBadge').classList.remove('hidden');
+          }
+        }
+      }
+
+      await loadTournamentList();
       await loadTournamentResults();
     });
 
-    async function loadTournamentResults() {
-      const { data: tData } = await client
+    async function loadTournamentList() {
+      const { data } = await client
         .from('tournaments')
         .select('*')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
-        .limit(1);
+        .order('event_date', { ascending: false });
 
-      if (!tData || tData.length === 0) {
-        document.getElementById('resultTitle').innerText = 'NO ACTIVE TOURNAMENT RECORD';
+      allTournaments = data || [];
+      const sel = document.getElementById('tournamentSelect');
+      sel.innerHTML = '';
+
+      if (allTournaments.length === 0) {
+        sel.innerHTML = '<option value="">No events recorded</option>';
         return;
       }
 
-      currentTournament = tData[0];
-      document.getElementById('resultTitle').innerText = currentTournament.title.toUpperCase();
-      document.getElementById('resultMeta').innerText = `Venue: ${currentTournament.lake_name || 'Lake Fork'} | Certified Date: ${currentTournament.event_date}`;
+      const targetId = getTargetTournamentId();
+      allTournaments.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.id;
+        opt.innerText = `${t.title} (${t.event_date || 'TBD'})`;
+        if (targetId === t.id || (!targetId && t.is_active)) {
+          opt.selected = true;
+        }
+        sel.appendChild(opt);
+      });
+    }
 
+    function switchTournament(tournamentId) {
+      if (!tournamentId) return;
+      localStorage.setItem('aafl_active_tid', tournamentId);
+      
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set('tid', tournamentId);
+      window.history.replaceState({}, '', newUrl);
+
+      loadTournamentResults();
+    }
+
+    async function loadTournamentResults() {
+      const targetId = getTargetTournamentId();
+
+      if (allTournaments.length > 0) {
+        currentTournament = allTournaments.find(t => t.id === targetId) || allTournaments[0];
+      } else {
+        const { data } = await client
+          .from('tournaments')
+          .select('*')
+          .order('event_date', { ascending: false })
+          .limit(1);
+        if (data && data.length > 0) currentTournament = data[0];
+      }
+
+      if (!currentTournament) {
+        document.getElementById('resultTitle').innerText = 'NO TOURNAMENT RESULTS AVAILABLE';
+        document.getElementById('resultsTableBody').innerHTML = '<tr><td colspan="7" class="py-8 text-center text-slate-500">No events found.</td></tr>';
+        return;
+      }
+
+      localStorage.setItem('aafl_active_tid', currentTournament.id);
+
+      // Keep sibling navigation links synced with current event
+      document.getElementById('linkStage').href = `index.html?tid=${currentTournament.id}`;
+      document.getElementById('linkRegister').href = `register.html?tid=${currentTournament.id}`;
+
+      document.getElementById('resultTitle').innerText = currentTournament.title.toUpperCase();
+      document.getElementById('resultMeta').innerText = `Venue: ${currentTournament.lake_name || 'Tournament Water'} • Date: ${currentTournament.event_date || 'Certified Day'}`;
+
+      // Fetch official aggregated results
       const { data: rData } = await client
         .from('official_tournament_final_results')
         .select('*')
@@ -148,7 +241,10 @@
       document.getElementById('cardField').innerText = `${totalField} Boats`;
 
       if (totalField === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="py-8 text-center text-slate-500">No locked bags on official record.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="py-8 text-center text-slate-500">No locked stage weights recorded for this tournament.</td></tr>';
+        document.getElementById('cardWinningWeight').innerText = '0.00 lbs';
+        document.getElementById('cardBigBass').innerText = '0.00 lbs';
+        document.getElementById('cardTotalWeight').innerText = '0.00 lbs';
         return;
       }
 
@@ -169,7 +265,6 @@
         totalPoundage += netWt;
         if (bbWt > highestBass) highestBass = bbWt;
 
-        // Payout determination
         let prizeMoney = 0;
         if (idx < tier.length) {
           prizeMoney = netPurse * tier[idx];
@@ -197,7 +292,7 @@
       document.getElementById('cardTotalWeight').innerText = `${totalPoundage.toFixed(2)} lbs`;
     }
 
-    // GENERATE COPYABLE WIX EMBED CODE
+    // GENERATE EMBED CODE FOR WIX
     function copyWixCode() {
       if (!currentTournament) {
         alert('Tournament results have not finished loading.');
@@ -238,13 +333,13 @@
     </tbody>
   </table>
   <div style="border-top:1px solid #1e293b;margin-top:15px;padding-top:10px;font-size:11px;color:#64748b;display:flex;justify-content:space-between;">
-    <span>Certified by AAFL Bump Board Matrix</span>
+    <span>Certified by AAFL Official Stage Console</span>
     <span>Live Standings Feed</span>
   </div>
 </div>`;
 
       navigator.clipboard.writeText(iframeCode).then(() => {
-        alert('Official Wix Embed Code copied to clipboard!\n\nTo display on your site:\n1. In Wix Editor, click "+ Add Elements"\n2. Choose "Embed Code" -> "Popular Embeds" -> "HTML Code (iframe)"\n3. Click "Enter Code" and paste.');
+        alert('Official Wix Embed Code copied to clipboard!\n\nTo display on Wix:\n1. Open your Wix Editor and click "+ Add Elements"\n2. Select "Embed Code" -> "Popular Embeds" -> "HTML Code (iframe)"\n3. Click "Enter Code", paste, and click "Update".');
       });
     }
   </script>
