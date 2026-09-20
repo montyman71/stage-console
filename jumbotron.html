@@ -108,7 +108,11 @@
 
     let currentTournamentId = null;
 
-    // Running Digital Clock
+    function getTargetTournamentId() {
+      const p = new URLSearchParams(window.location.search);
+      return p.get('tid') || localStorage.getItem('aafl_active_tid');
+    }
+
     setInterval(() => {
       document.getElementById('clockDisplay').innerText = new Date().toLocaleTimeString();
     }, 1000);
@@ -119,15 +123,21 @@
     });
 
     async function loadInitialTournament() {
-      const { data } = await client
-        .from('tournaments')
-        .select('*')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
-        .limit(1);
+      const targetId = getTargetTournamentId();
+      let query = client.from('tournaments').select('*');
+
+      if (targetId) {
+        query = query.eq('id', targetId);
+      } else {
+        query = query.eq('is_active', true).order('created_at', { ascending: false });
+      }
+
+      const { data } = await query.limit(1);
 
       if (data && data.length > 0) {
         currentTournamentId = data[0].id;
+        localStorage.setItem('aafl_active_tid', currentTournamentId);
+
         document.getElementById('jumboTitle').innerText = data[0].title.toUpperCase();
         if (data[0].lake_name) {
           document.getElementById('jumboSubtitle').innerText = `${data[0].lake_name.toUpperCase()} • OFFICIAL WEIGH-IN STAGE`;
@@ -171,7 +181,6 @@
         const bbWt = parseFloat(row.tournament_big_bass || 0);
         const tr = document.createElement('tr');
 
-        // Dynamic Podium Styling
         if (idx === 0) {
           tr.className = 'bg-amber-500/15 text-amber-300 font-bold border-l-4 border-amber-400';
         } else if (idx === 1) {
@@ -201,7 +210,6 @@
     }
 
     function setupRealtimeJumbotron() {
-      // Supabase Realtime Listener for Stage Weights
       client
         .channel('jumbo-weights-channel')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'official_stage_weights' }, () => {
@@ -209,11 +217,15 @@
         })
         .subscribe();
 
-      // Zero-Latency Local BroadcastChannel Listener
       broadcast.onmessage = (event) => {
         const data = event.data;
 
+        if (data.tournamentId && currentTournamentId && data.tournamentId !== currentTournamentId) {
+          return; // Ignore other concurrent tournaments
+        }
+
         if (data.type === 'TOURNAMENT_SYNC') {
+          currentTournamentId = data.tournamentId;
           document.getElementById('jumboTitle').innerText = data.tournamentTitle.toUpperCase();
           document.getElementById('jumboSubtitle').innerText = `${data.lakeName.toUpperCase()} • OFFICIAL WEIGH-IN STAGE`;
         }
@@ -246,7 +258,6 @@
           document.getElementById('jumboWeight').className = 'font-mono text-5xl lg:text-6xl font-black text-blue-400 tracking-tighter animate-pulse';
           document.getElementById('statusSubtext').innerText = `★ OFFICIAL LOCKED: ${data.netWeight} LBS ★`;
 
-          // Reset top ticker strip after 10 seconds for the next boat
           setTimeout(() => {
             document.getElementById('jumboAnglerName').innerText = 'AWAITING NEXT ANGLER...';
             document.getElementById('jumboWeight').innerText = '0.00';

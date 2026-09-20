@@ -25,14 +25,14 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
-        <a href="checkin.html" target="_blank" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-xs font-black text-white transition flex items-center gap-1.5">
+        <a id="linkCheckin" href="checkin.html" target="_blank" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-xs font-black text-white transition flex items-center gap-1.5">
           <span>📋 Dock Check-In</span>
           <span id="topQueuePill" class="bg-black/30 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold">0 Queue</span>
         </a>
-        <a href="results.html" class="px-3.5 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg text-xs font-black text-white transition flex items-center gap-1.5">
+        <a id="linkResults" href="results.html" class="px-3.5 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg text-xs font-black text-white transition flex items-center gap-1.5">
           <span>🏆 Final Results & Wix</span>
         </a>
-        <a href="register.html" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-black text-white transition">
+        <a id="linkRegister" href="register.html" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-black text-white transition">
           Registration Desk
         </a>
         <button id="scaleBtn" onclick="connectScale()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-xs font-bold flex items-center gap-2">
@@ -122,7 +122,7 @@
           </div>
         </div>
 
-        <!-- STANDALONE STAGE FISH COUNTERS (FOR EVENTS WITHOUT DOCK CHECK-IN) -->
+        <!-- STANDALONE STAGE FISH COUNTERS -->
         <div class="bg-slate-950 border border-slate-800 p-3.5 rounded-xl space-y-3">
           <div class="flex justify-between items-center">
             <span class="text-xs font-black uppercase text-slate-300">Stage Fish Verification</span>
@@ -247,6 +247,11 @@
     let liveWeight = 0.00;
     let cachedAnglers = [];
 
+    function getTargetTournamentId() {
+      const p = new URLSearchParams(window.location.search);
+      return p.get('tid') || localStorage.getItem('aafl_active_tid');
+    }
+
     window.addEventListener('DOMContentLoaded', async () => {
       await loadTournament();
       setupRealtimeSync();
@@ -254,20 +259,31 @@
 
     async function loadTournament() {
       try {
-        const { data, error } = await client
-          .from('tournaments')
-          .select('*')
-          .eq('is_active', true)
-          .order('created_at', { ascending: false })
-          .limit(1);
+        const targetId = getTargetTournamentId();
+        let query = client.from('tournaments').select('*');
+
+        if (targetId) {
+          query = query.eq('id', targetId);
+        } else {
+          query = query.eq('is_active', true).order('created_at', { ascending: false });
+        }
+
+        const { data, error } = await query.limit(1);
 
         if (error || !data || data.length === 0) {
-          document.getElementById('stageTitle').innerText = 'NO ACTIVE TOURNAMENT IN SUPABASE';
+          document.getElementById('stageTitle').innerText = 'NO TOURNAMENT FOUND';
           document.getElementById('stageSyncDot').className = 'w-3 h-3 rounded-full bg-red-500';
           return;
         }
 
         activeTournament = data[0];
+        localStorage.setItem('aafl_active_tid', activeTournament.id);
+
+        // Update nav links to preserve tournament parameter
+        document.getElementById('linkCheckin').href = `checkin.html?tid=${activeTournament.id}`;
+        document.getElementById('linkResults').href = `results.html?tid=${activeTournament.id}`;
+        document.getElementById('linkRegister').href = `register.html?tid=${activeTournament.id}`;
+
         document.getElementById('stageTitle').innerText = activeTournament.title.toUpperCase();
         document.getElementById('stageSyncDot').className = 'w-3 h-3 rounded-full bg-emerald-500';
 
@@ -277,6 +293,7 @@
 
         broadcast.postMessage({
           type: 'TOURNAMENT_SYNC',
+          tournamentId: activeTournament.id,
           tournamentTitle: activeTournament.title,
           lakeName: activeTournament.lake_name || 'Lake Fork',
           eventDate: activeTournament.event_date
@@ -301,7 +318,6 @@
       document.getElementById('localRosterCount').innerText = `${cachedAnglers.length} boats registered`;
     }
 
-    // TOGGLE TOTAL BAG vs BIG BASS MODE
     function setWeighMode(mode) {
       weighMode = mode;
       const totalBtn = document.getElementById('modeTotalBtn');
@@ -321,7 +337,6 @@
       }
     }
 
-    // ONBOARD FISH COUNTER CONTROLS
     function setAlive(count) {
       aliveCount = count;
       document.querySelectorAll('.aliveBtn').forEach((btn, idx) => {
@@ -351,7 +366,6 @@
       document.getElementById('fishTotalBadge').innerHTML = `Total: <strong class="text-white">${total}</strong> fish`;
     }
 
-    // LOAD HOLDING QUEUE FROM DOCK CHECK-IN
     async function loadStageQueue() {
       if (!activeTournament) return;
 
@@ -399,8 +413,6 @@
       if (!target) return;
 
       selectAngler(target);
-
-      // Pre-set dock inspection counts if available
       setAlive(target.alive_fish_count !== undefined ? target.alive_fish_count : 5);
       setDead(target.dead_fish_count || 0);
       document.getElementById('selectedMeta').innerText = `Dock Count: ${target.alive_fish_count || 0} Alive | ${target.dead_fish_count || 0} Dead`;
@@ -416,6 +428,7 @@
 
       broadcast.postMessage({
         type: 'ANGLER_ON_STAGE',
+        tournamentId: activeTournament.id,
         anglerName: a.display_name
       });
     }
@@ -437,13 +450,16 @@
       document.getElementById('bigBassDisplay').innerText = `${bigBass.toFixed(2)} lbs`;
       document.getElementById('netDisplay').innerText = `${net.toFixed(2)} lbs`;
 
-      broadcast.postMessage({
-        type: 'LIVE_WEIGHT_TICKER',
-        grossWeight: gross.toFixed(2),
-        netWeight: net.toFixed(2),
-        bigBassWeight: bigBass.toFixed(2),
-        deadPenalty: penalty.toFixed(2)
-      });
+      if (activeTournament) {
+        broadcast.postMessage({
+          type: 'LIVE_WEIGHT_TICKER',
+          tournamentId: activeTournament.id,
+          grossWeight: gross.toFixed(2),
+          netWeight: net.toFixed(2),
+          bigBassWeight: bigBass.toFixed(2),
+          deadPenalty: penalty.toFixed(2)
+        });
+      }
     }
 
     async function commitWeight() {
@@ -458,7 +474,6 @@
       commitBtn.innerText = 'Locking...';
       commitBtn.disabled = true;
 
-      // 1. Insert official locked weight record
       const { error: weightErr } = await client.from('official_stage_weights').insert({
         tournament_id: activeTournament.id,
         participant_id: selectedAngler.id,
@@ -477,7 +492,6 @@
         return;
       }
 
-      // 2. Mark participant as weighed
       await client
         .from('tournament_participants')
         .update({ 
@@ -489,9 +503,9 @@
 
       commitBtn.innerText = 'OFFICIAL LOCK & COMMIT';
 
-      // 3. Broadcast to Jumbotron and Dock
       broadcast.postMessage({
         type: 'WEIGHT_LOCKED',
+        tournamentId: activeTournament.id,
         anglerName: selectedAngler.display_name,
         netWeight: net.toFixed(2),
         bigBassWeight: bigBass.toFixed(2)
@@ -553,6 +567,7 @@
 
       broadcast.postMessage({
         type: 'LEADERBOARD_UPDATE',
+        tournamentId: activeTournament.id,
         leaderboard: data
       });
     }
@@ -575,6 +590,9 @@
 
       broadcast.onmessage = (event) => {
         const msg = event.data;
+        if (msg.tournamentId && activeTournament && msg.tournamentId !== activeTournament.id) {
+          return; // Ignore other concurrent tournaments
+        }
         if (msg.type === 'QUEUE_UPDATED') {
           loadStageQueue();
         }
@@ -665,7 +683,8 @@
     });
 
     function openJumbotron() {
-      window.open('jumbotron.html', '_blank', 'width=1280,height=720');
+      const tid = activeTournament ? activeTournament.id : getTargetTournamentId();
+      window.open(`jumbotron.html?tid=${tid}`, '_blank', 'width=1280,height=720');
     }
   </script>
 </body>

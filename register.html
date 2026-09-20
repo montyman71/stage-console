@@ -9,29 +9,22 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans p-6">
 
-  <!-- DIRECTOR PASSCODE LOGIN OVERLAY -->
+  <!-- SESSION GATE MODAL -->
   <div id="authGate" class="fixed inset-0 bg-slate-950/95 flex items-center justify-center p-4 z-50">
-    <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl max-w-sm w-full shadow-2xl space-y-5 text-center">
-      <div class="inline-block p-3 bg-blue-600/10 border border-blue-500/30 rounded-2xl">
-        <span class="text-3xl">🔐</span>
-      </div>
-      <div>
-        <h2 class="text-lg font-black text-white uppercase tracking-wider">Tournament Director Gate</h2>
-        <p class="text-xs text-slate-400 mt-1">Enter Master Passcode to manage fees, flights, and events</p>
-      </div>
-      <form onsubmit="handleAuth(event)" class="space-y-3">
-        <input type="password" id="passcodeInput" placeholder="Master Passcode" required class="w-full p-3 bg-slate-950 border border-slate-700 rounded-lg text-white text-center font-mono text-lg tracking-widest focus:border-blue-500 focus:outline-none" />
-        <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase tracking-widest rounded-lg transition shadow-lg">
-          Unlock Director Panel
-        </button>
-      </form>
-      <p class="text-[11px] text-slate-500">Default Access: <code class="font-mono text-slate-400">AAFL2026</code></p>
+    <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl max-w-sm w-full text-center space-y-4 shadow-2xl">
+      <div class="text-4xl">🔐</div>
+      <h2 class="text-xl font-black text-white uppercase">Director Station Locked</h2>
+      <p class="text-xs text-slate-400">Sign in with an authorized AAFL account to manage entries, fees, and flight assignments.</p>
+      <a href="auth.html" class="block w-full py-3 bg-blue-600 hover:bg-blue-500 font-black text-xs uppercase tracking-wider text-white rounded-lg transition shadow-lg">
+        Log In via Staff Portal →
+      </a>
+      <button onclick="bypassWithPasscode()" class="text-[11px] text-slate-500 hover:text-slate-300 underline font-mono">Use Backup Master PIN</button>
     </div>
   </div>
 
   <div class="max-w-7xl mx-auto space-y-6">
 
-    <!-- TOP BAR & TOURNAMENT SWITCHER -->
+    <!-- TOP BAR & MULTI-TOURNAMENT SWITCHER -->
     <div class="flex flex-wrap justify-between items-center bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-xl gap-4">
       <div>
         <div class="flex items-center gap-3">
@@ -53,15 +46,15 @@
         <button onclick="openNewTournamentModal()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-xs font-black text-white transition">
           + New Event
         </button>
-        <a href="results.html" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 rounded-lg text-xs font-black text-white transition">
-          🏆 Final Results & Wix
-        </a>
-        <a href="index.html" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-black text-white transition">
+        <a id="linkStage" href="index.html" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-black text-white transition">
           Stage Console →
         </a>
-        <button onclick="lockDirectorPanel()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold text-slate-400">
-          🔒 Lock
-        </button>
+        <a id="linkResults" href="results.html" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 rounded-lg text-xs font-black text-white transition">
+          Results & Wix
+        </a>
+        <a href="auth.html" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold text-slate-300">
+          👤 Staff Hub
+        </a>
       </div>
     </div>
 
@@ -211,7 +204,7 @@
         </div>
       </div>
 
-      <!-- COLUMN 2: FLIGHT SCHEDULE & BULK BLAST -->
+      <!-- COLUMN 2: FLIGHT SCHEDULE -->
       <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-xl flex flex-col justify-between">
         <div>
           <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-2">
@@ -227,7 +220,7 @@
                   <th class="py-2">Range</th>
                   <th class="py-2">Takeoff</th>
                   <th class="py-2">Check-In</th>
-                  <th class="py-2 text-right">Dispatch</th>
+                  <th class="py-2 text-right">Registered</th>
                 </tr>
               </thead>
               <tbody id="flightScheduleBody" class="divide-y divide-slate-800 font-mono text-xs"></tbody>
@@ -302,17 +295,15 @@
           </div>
         </div>
         <button type="submit" id="createTournBtn" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase rounded-lg shadow-lg transition mt-2">
-          Create & Activate Event
+          Create & Scope Event
         </button>
       </form>
     </div>
   </div>
 
   <script>
-    const MASTER_PASSCODE = 'AAFL2026';
     const SUPABASE_URL = 'https://gjoxrosyboapwfqlfdye.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdqb3hyb3N5Ym9hcHdmcWxmZHllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3MDEwMzQsImV4cCI6MjEwNDI3NzAzNH0.SFcX-NYJgL8lGv5QP2HXN83eaL7x2v0KCJonJXYoUAE';
-
     const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const broadcast = new BroadcastChannel('stage_jumbotron_feed');
 
@@ -340,25 +331,17 @@
       return SCALE_PRESETS[10];
     }
 
-    // AUTH GATING
-    function handleAuth(e) {
-      e.preventDefault();
-      const entered = document.getElementById('passcodeInput').value;
-      if (entered === MASTER_PASSCODE) {
-        sessionStorage.setItem('aafl_director_auth', 'true');
+    function bypassWithPasscode() {
+      const pin = prompt('Enter AAFL Director Master PIN:');
+      if (pin === 'AAFL2026') {
         document.getElementById('authGate').classList.add('hidden');
-      } else {
-        alert('Invalid Director Passcode');
       }
     }
 
-    function lockDirectorPanel() {
-      sessionStorage.removeItem('aafl_director_auth');
-      document.getElementById('authGate').classList.remove('hidden');
-    }
-
     window.addEventListener('DOMContentLoaded', async () => {
-      if (sessionStorage.getItem('aafl_director_auth') === 'true') {
+      // Check auth session
+      const { data: { session } } = await client.auth.getSession();
+      if (session) {
         document.getElementById('authGate').classList.add('hidden');
       }
 
@@ -381,6 +364,11 @@
       setupCrossScreenListeners();
     });
 
+    function getTargetTournamentId() {
+      const p = new URLSearchParams(window.location.search);
+      return p.get('tid') || localStorage.getItem('aafl_active_tid');
+    }
+
     async function loadTournamentList() {
       const { data } = await client
         .from('tournaments')
@@ -389,26 +377,31 @@
 
       const sel = document.getElementById('tournamentSelect');
       sel.innerHTML = '';
+      const currentTarget = getTargetTournamentId();
+
       (data || []).forEach(t => {
         const opt = document.createElement('option');
         opt.value = t.id;
         opt.innerText = `${t.title} (${t.pin})${t.is_active ? ' ★ ACTIVE' : ''}`;
-        if (t.is_active) opt.selected = true;
+        if (currentTarget === t.id || (!currentTarget && t.is_active)) {
+          opt.selected = true;
+        }
         sel.appendChild(opt);
       });
     }
 
     async function switchTournament(tournamentId) {
       if (!tournamentId) return;
-      document.getElementById('syncDot').className = 'w-3 h-3 rounded-full bg-amber-500 animate-pulse';
+      localStorage.setItem('aafl_active_tid', tournamentId);
+      
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set('tid', tournamentId);
+      window.history.replaceState({}, '', newUrl);
 
-      const { error } = await client.rpc('set_active_tournament', { p_tournament_id: tournamentId });
-      if (error) {
-        alert('Failed to switch event: ' + error.message);
-        return;
-      }
+      // Update outgoing link anchors
+      document.getElementById('linkStage').href = `index.html?tid=${tournamentId}`;
+      document.getElementById('linkResults').href = `results.html?tid=${tournamentId}`;
 
-      await loadTournamentList();
       await loadData();
 
       broadcast.postMessage({
@@ -419,20 +412,29 @@
 
     async function loadData() {
       try {
-        const { data: tData, error: tErr } = await client
-          .from('tournaments')
-          .select('*')
-          .eq('is_active', true)
-          .order('created_at', { ascending: false })
-          .limit(1);
+        const targetId = getTargetTournamentId();
+        let query = client.from('tournaments').select('*');
+
+        if (targetId) {
+          query = query.eq('id', targetId);
+        } else {
+          query = query.eq('is_active', true).order('created_at', { ascending: false });
+        }
+
+        const { data: tData, error: tErr } = await query.limit(1);
 
         if (tErr || !tData || tData.length === 0) {
-          document.getElementById('tournamentHeading').innerText = 'NO ACTIVE TOURNAMENT FOUND';
+          document.getElementById('tournamentHeading').innerText = 'NO TOURNAMENT FOUND';
           document.getElementById('syncDot').className = 'w-3 h-3 rounded-full bg-red-500';
           return;
         }
 
         activeTournament = tData[0];
+        localStorage.setItem('aafl_active_tid', activeTournament.id);
+
+        document.getElementById('linkStage').href = `index.html?tid=${activeTournament.id}`;
+        document.getElementById('linkResults').href = `results.html?tid=${activeTournament.id}`;
+
         document.getElementById('tournamentHeading').innerText = activeTournament.title.toUpperCase();
         document.getElementById('syncDot').className = 'w-3 h-3 rounded-full bg-emerald-500';
 
@@ -456,7 +458,7 @@
 
       } catch (err) {
         console.error('Initialization error:', err);
-        document.getElementById('tournamentHeading').innerText = 'CONNECTION / CORS ERROR';
+        document.getElementById('tournamentHeading').innerText = 'CONNECTION ERROR';
         document.getElementById('syncDot').className = 'w-3 h-3 rounded-full bg-red-500';
       }
     }
@@ -471,8 +473,9 @@
 
       broadcast.onmessage = (event) => {
         if (event.data.type === 'ACTIVE_TOURNAMENT_CHANGED') {
-          loadData();
-          loadTournamentList();
+          if (event.data.tournamentId === activeTournament?.id) {
+            loadData();
+          }
         }
       };
     }
@@ -496,39 +499,29 @@
       btn.innerText = 'Creating Event...';
 
       try {
-        const { data, error } = await client.rpc('create_and_activate_tournament', {
-          p_pin: pin,
-          p_title: title,
-          p_lake: lake,
-          p_date: date
-        });
+        const { data, error } = await client
+          .from('tournaments')
+          .insert([{ pin, title, lake_name: lake, event_date: date, is_active: true }])
+          .select()
+          .single();
 
         btn.disabled = false;
-        btn.innerText = 'Create & Activate Event';
+        btn.innerText = 'Create & Scope Event';
 
         if (error) {
-          alert('Failed to create event: ' + error.message);
+          alert('Failed: ' + error.message);
           return;
         }
 
         closeNewTournamentModal();
-        document.getElementById('newTournTitle').value = '';
-        document.getElementById('newTournPin').value = '';
-
+        switchTournament(data.id);
         await loadTournamentList();
-        await loadData();
-
-        broadcast.postMessage({
-          type: 'ACTIVE_TOURNAMENT_CHANGED',
-          tournamentId: data.id
-        });
-
-        alert(`Event "${title}" created and activated!`);
+        alert(`Event "${title}" created!`);
 
       } catch (err) {
         btn.disabled = false;
-        btn.innerText = 'Create & Activate Event';
-        alert('Connection Error: ' + err.message);
+        btn.innerText = 'Create & Scope Event';
+        alert('Error: ' + err.message);
       }
     }
 
@@ -737,9 +730,9 @@
         .eq('id', activeTournament.id);
 
       if (error) {
-        alert('Error saving: ' + error.message);
+        alert('Error: ' + error.message);
       } else {
-        alert('Tournament Schedule Settings Saved!');
+        alert('Tournament Settings Saved!');
         updateFlightScheduleDisplay();
         renderRoster();
       }
@@ -748,7 +741,7 @@
     document.getElementById('regForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!activeTournament) {
-        alert('Tournament not loaded. Check internet or Supabase connection.');
+        alert('Tournament not loaded.');
         return;
       }
 
@@ -789,11 +782,12 @@
           return;
         }
 
-        const added = (data && data.length > 0) ? data[0] : { id: Math.random().toString(), display_name: fullName, boat_number: boatNum, phone };
+        const added = data[0];
         participants.push(added);
 
         broadcast.postMessage({
           type: 'NEW_ANGLER_REGISTERED',
+          tournamentId: activeTournament.id,
           angler: added
         });
 
