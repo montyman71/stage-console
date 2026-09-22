@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AAFL - Official Member Registry</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans p-6">
+
+  <div class="max-w-6xl mx-auto space-y-6">
+
+    <!-- TOP HEADER -->
+    <div class="flex flex-wrap justify-between items-center bg-slate-900 border border-slate-800 p-5 rounded-xl shadow-xl gap-4">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-black uppercase text-amber-400 tracking-widest">American Anglers Fishing League</span>
+        </div>
+        <h1 class="text-2xl font-black text-white uppercase mt-0.5">Official Angler Membership Roster</h1>
+        <p class="text-xs font-mono text-slate-400 mt-1">1-Calendar-Year Active Registry • Series Starting 2027-00001</p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button onclick="openNewMemberModal()" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase rounded-lg shadow-lg transition">
+          + Register New Member
+        </button>
+        <a href="register.html" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-lg border border-slate-700">
+          ← Tournament Desk
+        </a>
+      </div>
+    </div>
+
+    <!-- SEARCH & METRIC HUD -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div class="md:col-span-2 bg-slate-900 border border-slate-800 p-3.5 rounded-xl flex items-center">
+        <input 
+          type="text" 
+          id="memberSearchInput" 
+          oninput="filterMembers(this.value)" 
+          placeholder="🔍 Search member by name, #ID (2027-XXXXX), or phone..." 
+          class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-sm text-white font-mono focus:outline-none focus:border-blue-500" 
+        />
+      </div>
+      <div class="bg-slate-900 border border-slate-800 p-3.5 rounded-xl flex justify-between items-center">
+        <span class="text-xs font-bold text-slate-400 uppercase">Active Cards</span>
+        <span id="activeCount" class="text-2xl font-black font-mono text-emerald-400">0</span>
+      </div>
+      <div class="bg-slate-900 border border-slate-800 p-3.5 rounded-xl flex justify-between items-center">
+        <span class="text-xs font-bold text-slate-400 uppercase">Expired / Pending</span>
+        <span id="expiredCount" class="text-2xl font-black font-mono text-amber-400">0</span>
+      </div>
+    </div>
+
+    <!-- ROSTER TABLE -->
+    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl space-y-3">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead>
+            <tr class="text-[11px] uppercase text-slate-400 border-b border-slate-800 font-mono">
+              <th class="py-3 pl-3">Member ID</th>
+              <th class="py-3">Angler Name</th>
+              <th class="py-3">Phone</th>
+              <th class="py-3">Joined Date</th>
+              <th class="py-3">Expires On</th>
+              <th class="py-3">Status</th>
+              <th class="py-3 text-right pr-3">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="memberTableBody" class="divide-y divide-slate-800 font-mono text-xs">
+            <tr><td colspan="7" class="py-8 text-center text-slate-500">Loading registered members...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- MODAL: ADD NEW MEMBER -->
+  <div id="newMemberModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-lg w-full shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+        <div>
+          <h3 class="text-lg font-black text-white uppercase">Register AAFL Member</h3>
+          <p class="text-[11px] text-slate-400">Issues automated 1-calendar-year membership</p>
+        </div>
+        <button onclick="closeNewMemberModal()" class="text-slate-500 hover:text-white font-bold">✕</button>
+      </div>
+
+      <form id="newMemberForm" onsubmit="submitNewMember(event)" class="space-y-3">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-bold uppercase text-slate-400 block mb-1">First Name</label>
+            <input type="text" id="mFirstName" required class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" />
+          </div>
+          <div>
+            <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Last Name</label>
+            <input type="text" id="mLastName" required class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Phone Number</label>
+            <input type="tel" id="mPhone" placeholder="(555) 000-0000" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm font-mono focus:border-blue-500 focus:outline-none" />
+          </div>
+          <div>
+            <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Email (Optional)</label>
+            <input type="email" id="mEmail" placeholder="angler@example.com" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2">
+          <div class="col-span-2">
+            <label class="text-xs font-bold uppercase text-slate-400 block mb-1">City</label>
+            <input type="text" id="mCity" placeholder="Kissimmee" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" />
+          </div>
+          <div>
+            <label class="text-xs font-bold uppercase text-slate-400 block mb-1">State</label>
+            <input type="text" id="mState" value="FL" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm uppercase font-mono focus:border-blue-500 focus:outline-none" />
+          </div>
+        </div>
+
+        <div class="p-3 bg-blue-950/40 border border-blue-500/30 rounded-lg text-[11px] text-blue-300 font-mono">
+          ℹ️ Next Available ID: <span class="font-bold text-white">Auto-generated (2027-XXXXX)</span><br>
+          📅 Term: Valid for exactly 365 days from registration.
+        </div>
+
+        <button type="submit" id="saveMemberBtn" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase rounded-lg shadow-lg transition">
+          Confirm Membership & Issue Card
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://gjoxrosyboapwfqlfdye.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdqb3hyb3N5Ym9hcHdmcWxmZHllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3MDEwMzQsImV4cCI6MjEwNDI3NzAzNH0.SFcX-NYJgL8lGv5QP2HXN83eaL7x2v0KCJonJXYoUAE';
+    const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let allMembers = [];
+
+    window.addEventListener('DOMContentLoaded', loadMembers);
+
+    async function loadMembers() {
+      const { data, error } = await client
+        .from('anglers_membership')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error(error);
+        return;
+      }
+
+      allMembers = data || [];
+      renderTable(allMembers);
+    }
+
+    function renderTable(list) {
+      const tbody = document.getElementById('memberTableBody');
+      const today = new Date().toISOString().split('T')[0];
+
+      let active = 0;
+      let expired = 0;
+
+      tbody.innerHTML = '';
+
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="py-8 text-center text-slate-500">No members found matching your search.</td></tr>';
+        document.getElementById('activeCount').innerText = '0';
+        document.getElementById('expiredCount').innerText = '0';
+        return;
+      }
+
+      list.forEach(m => {
+        const isExpired = m.expires_date < today;
+        if (isExpired) expired++; else active++;
+
+        const tr = document.createElement('tr');
+        tr.className = isExpired ? 'opacity-60 text-slate-400' : 'text-slate-200';
+
+        tr.innerHTML = `
+          <td class="py-3 pl-3 font-black text-amber-400">${m.member_number}</td>
+          <td class="py-3 font-bold text-white font-sans">${m.full_name}</td>
+          <td class="py-3 text-slate-400">${m.phone || '-'}</td>
+          <td class="py-3 text-slate-400">${m.joined_date}</td>
+          <td class="py-3 font-bold ${isExpired ? 'text-red-400' : 'text-emerald-400'}">${m.expires_date}</td>
+          <td class="py-3">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${isExpired ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'}">
+              ${isExpired ? 'EXPIRED' : 'ACTIVE'}
+            </span>
+          </td>
+          <td class="py-3 text-right pr-3">
+            <button onclick="renewMember('${m.id}')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] font-bold">
+              ↻ +1 Year
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('activeCount').innerText = active;
+      document.getElementById('expiredCount').innerText = expired;
+    }
+
+    function filterMembers(q) {
+      q = q.trim().toLowerCase();
+      if (!q) {
+        renderTable(allMembers);
+        return;
+      }
+      const filtered = allMembers.filter(m => 
+        (m.full_name && m.full_name.toLowerCase().includes(q)) ||
+        (m.member_number && m.member_number.toLowerCase().includes(q)) ||
+        (m.phone && m.phone.includes(q))
+      );
+      renderTable(filtered);
+    }
+
+    function openNewMemberModal() {
+      document.getElementById('newMemberModal').classList.remove('hidden');
+    }
+    function closeNewMemberModal() {
+      document.getElementById('newMemberModal').classList.add('hidden');
+    }
+
+    async function submitNewMember(e) {
+      e.preventDefault();
+      const first = document.getElementById('mFirstName').value.trim();
+      const last = document.getElementById('mLastName').value.trim();
+      const phone = document.getElementById('mPhone').value.trim();
+      const email = document.getElementById('mEmail').value.trim();
+      const city = document.getElementById('mCity').value.trim();
+      const state = document.getElementById('mState').value.trim();
+      const btn = document.getElementById('saveMemberBtn');
+
+      btn.disabled = true;
+      btn.innerText = 'Creating 1-Year Membership...';
+
+      const { data, error } = await client
+        .from('anglers_membership')
+        .insert([{
+          first_name: first,
+          last_name: last,
+          phone: phone || null,
+          email: email || null,
+          city: city || null,
+          state: state || 'FL'
+        }])
+        .select()
+        .single();
+
+      btn.disabled = false;
+      btn.innerText = 'Confirm Membership & Issue Card';
+
+      if (error) {
+        alert('Error: ' + error.message);
+        return;
+      }
+
+      alert(`Success! ${data.full_name} registered with Card #${data.member_number}, expires ${data.expires_date}.`);
+      closeNewMemberModal();
+      document.getElementById('newMemberForm').reset();
+      loadMembers();
+    }
+
+    async function renewMember(id) {
+      if (!confirm('Add +1 calendar year to this membership?')) return;
+      const { data: current } = await client.from('anglers_membership').select('expires_date').eq('id', id).single();
+      
+      let baseDate = new Date();
+      if (current && new Date(current.expires_date) > baseDate) {
+        baseDate = new Date(current.expires_date);
+      }
+      baseDate.setFullYear(baseDate.getFullYear() + 1);
+      const newExp = baseDate.toISOString().split('T')[0];
+
+      await client.from('anglers_membership').update({ expires_date: newExp }).eq('id', id);
+      loadMembers();
+    }
+  </script>
+</body>
+</html>
