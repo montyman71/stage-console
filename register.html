@@ -43,15 +43,18 @@
         </div>
       </div>
 
-      <!-- STATION LINKS & DELETE EVENT BUTTON -->
+      <!-- STATION LINKS & ACTIONS -->
       <div class="flex flex-wrap items-center gap-2">
-        <button onclick="openNewTournamentModal()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-xs font-black text-white transition flex items-center gap-1.5 shadow-lg">
+        <a href="members.html" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-xs font-black text-white transition flex items-center gap-1.5 shadow-lg">
+          <span>🪪 Member Registry</span>
+        </a>
+        <button onclick="openNewTournamentModal()" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-black text-white transition flex items-center gap-1.5 shadow-lg">
           <span>+ Add To Schedule</span>
         </button>
         <button onclick="confirmDeleteCurrentTournament()" class="px-3 py-2 bg-red-900/60 hover:bg-red-800 text-red-200 border border-red-700/60 rounded-lg text-xs font-bold transition flex items-center gap-1">
           <span>🗑️ Delete Event</span>
         </button>
-        <a id="linkStage" href="index.html" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-black text-white transition">
+        <a id="linkStage" href="index.html" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-black text-white transition">
           Stage Console →
         </a>
         <a id="linkCheckin" href="checkin.html" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold text-slate-300 transition">
@@ -174,7 +177,7 @@
     <!-- MAIN INTERACTIVE DECK -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-      <!-- COLUMN 1: REGISTRATION -->
+      <!-- COLUMN 1: REGISTRATION (AUTO-COMPLETE SEARCH + SEQUENTIAL/RANDOM BOAT ASSIGNMENT) -->
       <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-xl flex flex-col justify-between">
         <div>
           <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-2">
@@ -191,9 +194,23 @@
           </div>
 
           <form id="regForm" class="space-y-4">
-            <div>
-              <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Captain / Boater Name</label>
-              <input type="text" id="captainName" required placeholder="Captain Name" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" />
+            <!-- CAPTAIN SEARCH & AUTO-FILL FROM MEMBER REGISTRY -->
+            <div class="relative">
+              <div class="flex justify-between items-center mb-1">
+                <label class="text-xs font-bold uppercase text-slate-400">Captain / Boater Name</label>
+                <a href="members.html" target="_blank" class="text-[10px] text-blue-400 hover:underline font-bold">+ New Member Card</a>
+              </div>
+              <input 
+                type="text" 
+                id="captainName" 
+                required 
+                autocomplete="off"
+                oninput="searchMemberRegistry(this.value)" 
+                placeholder="Type name or 2027-XXXXX to search..." 
+                class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" 
+              />
+              <!-- FLOATING AUTO-COMPLETE RESULTS -->
+              <div id="memberSearchResults" class="hidden absolute top-full left-0 right-0 z-30 bg-slate-900 border border-slate-700 rounded-lg shadow-2xl mt-1 max-h-48 overflow-y-auto"></div>
             </div>
 
             <div>
@@ -206,6 +223,7 @@
               <input type="tel" id="captainPhone" placeholder="(555) 000-0000" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm font-mono focus:border-blue-500 focus:outline-none" />
             </div>
 
+            <!-- BOAT NUMBER ROW (AUTO SEQUENTIAL) -->
             <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg">
               <div class="flex justify-between items-center mb-1">
                 <div class="flex items-center gap-1.5">
@@ -328,12 +346,11 @@
             <span class="text-[10px] text-slate-400">Select or add new</span>
           </div>
 
-          <!-- Select Box (Includes Toho, Harris Chain, N. Florida + Custom) -->
           <select id="newTournDivision" onchange="handleDivisionSelectChange(this.value)" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white text-sm font-bold focus:border-amber-500 focus:outline-none">
-            <!-- Dynamically filled by JavaScript -->
+            <!-- Dynamically populated -->
           </select>
 
-          <!-- Input to type custom new division if '+ Add New Division' selected -->
+          <!-- Input to add custom new division if selected -->
           <div id="customDivisionInputBox" class="hidden pt-1">
             <label class="text-[11px] font-bold text-slate-300 block mb-1">Type New Division Name:</label>
             <input type="text" id="customDivisionName" placeholder="e.g. Kissimmee Chain, St. Johns River..." class="w-full p-2 bg-slate-900 border border-amber-500/50 rounded text-white text-xs font-bold focus:outline-none focus:border-amber-400" />
@@ -376,6 +393,7 @@
     let activeTournament = null;
     let participants = [];
     let allTournaments = [];
+    let registeredMembersCache = [];
 
     // DEFAULT BCT DIVISIONS (PERSISTED LOCALLY & EXTENSIBLE)
     const DEFAULT_DIVISIONS = ['Toho', 'Harris Chain', 'N. Florida'];
@@ -411,7 +429,6 @@
         opt.innerText = div;
         sel.appendChild(opt);
       });
-      // Option to add new
       const customOpt = document.createElement('option');
       customOpt.value = '__ADD_NEW__';
       customOpt.innerText = '➕ + Add New Division...';
@@ -485,11 +502,83 @@
         updateFlightTagForInput();
       });
 
+      // Hide member dropdown when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('#captainName') && !e.target.closest('#memberSearchResults')) {
+          document.getElementById('memberSearchResults').classList.add('hidden');
+        }
+      });
+
       populateDivisionDropdown();
+      await preloadMembers();
       await loadSchedule();
       await loadData();
       setupCrossScreenListeners();
     });
+
+    // PRELOAD ACTIVE ANGLER MEMBERSHIPS FOR INSTANT AUTO-COMPLETE
+    async function preloadMembers() {
+      try {
+        const { data } = await client
+          .from('anglers_membership')
+          .select('*')
+          .order('full_name', { ascending: true });
+        registeredMembersCache = data || [];
+      } catch (err) {
+        console.warn('Could not preload member roster:', err);
+      }
+    }
+
+    function searchMemberRegistry(val) {
+      const box = document.getElementById('memberSearchResults');
+      const query = val.trim().toLowerCase();
+
+      if (!query || query.length < 2) {
+        box.classList.add('hidden');
+        return;
+      }
+
+      const today = new Date().toISOString().split('T')[0];
+      const matches = registeredMembersCache.filter(m => 
+        (m.full_name && m.full_name.toLowerCase().includes(query)) ||
+        (m.member_number && m.member_number.toLowerCase().includes(query)) ||
+        (m.phone && m.phone.includes(query))
+      ).slice(0, 5);
+
+      if (matches.length === 0) {
+        box.classList.add('hidden');
+        return;
+      }
+
+      box.innerHTML = '';
+      matches.forEach(m => {
+        const isExpired = m.expires_date < today;
+        const div = document.createElement('div');
+        div.className = 'p-2.5 hover:bg-slate-800 cursor-pointer border-b border-slate-800/80 flex justify-between items-center text-xs';
+        div.onclick = () => selectMemberForRegistration(m);
+
+        div.innerHTML = `
+          <div>
+            <div class="font-bold text-white">${m.full_name}</div>
+            <div class="text-[10px] font-mono text-slate-400">ID: ${m.member_number} • 📞 ${m.phone || 'No phone'}</div>
+          </div>
+          <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold ${isExpired ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'}">
+            ${isExpired ? 'EXPIRED' : 'ACTIVE'}
+          </span>
+        `;
+        box.appendChild(div);
+      });
+
+      box.classList.remove('hidden');
+    }
+
+    function selectMemberForRegistration(member) {
+      document.getElementById('captainName').value = `${member.full_name} (${member.member_number})`;
+      if (member.phone) {
+        document.getElementById('captainPhone').value = member.phone;
+      }
+      document.getElementById('memberSearchResults').classList.add('hidden');
+    }
 
     function getTargetTournamentId() {
       const p = new URLSearchParams(window.location.search);
@@ -505,7 +594,6 @@
       return 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
     }
 
-    // MULTI-TENANT SCHEDULE LOADER
     async function loadSchedule() {
       let query = client.from('tournaments').select('*').order('event_date', { ascending: false });
 
@@ -516,7 +604,6 @@
       const { data } = await query;
       allTournaments = data || [];
 
-      // Check for any divisions already in existing tournaments and merge them
       allTournaments.forEach(t => {
         if (t.division && !bctDivisions.includes(t.division)) {
           bctDivisions.push(t.division);
@@ -998,7 +1085,6 @@
       }
     });
 
-    // CREATE EVENT WITH TRAIL & DYNAMIC DIVISION (TOHO, HARRIS CHAIN, N. FLORIDA, OR NEW)
     function openNewTournamentModal() {
       document.getElementById('newTournamentModal').classList.remove('hidden');
       toggleDivisionVisibility();
@@ -1023,7 +1109,6 @@
           }
           division = customName;
 
-          // Save new division for future use
           if (!bctDivisions.includes(division)) {
             bctDivisions.push(division);
             localStorage.setItem('aafl_bct_divisions', JSON.stringify(bctDivisions));
