@@ -118,17 +118,20 @@
       </div>
     </div>
 
-    <!-- PURSE SUMMARY HUD -->
+    <!-- PURSE SUMMARY HUD (WITH BCT FIXED RULE ENFORCEMENT) -->
     <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl shadow-xl space-y-4">
       <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-        <h2 class="text-xs font-black uppercase text-amber-400 tracking-widest">⚙️ Fee Parameters & Real-Time Purse</h2>
+        <div class="flex items-center gap-2">
+          <h2 class="text-xs font-black uppercase text-amber-400 tracking-widest">⚙️ Fee Parameters & Real-Time Purse</h2>
+          <span id="bctRuleTag" class="hidden text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded">🔒 BCT FIXED RULES ($65/BOAT NET • 1-IN-6 SCALE)</span>
+        </div>
         <span class="text-[11px] text-slate-400">Syncs dynamically with registered field</span>
       </div>
 
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div>
           <label class="text-[11px] font-bold uppercase text-slate-400 block mb-1">Entry Fee ($ / Boat)</label>
-          <input type="number" id="inputEntryFee" value="150" step="5" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white font-mono font-bold text-sm focus:border-blue-500 focus:outline-none" />
+          <input type="number" id="inputEntryFee" value="80" step="5" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white font-mono font-bold text-sm focus:border-blue-500 focus:outline-none" />
         </div>
         <div>
           <label class="text-[11px] font-bold uppercase text-slate-400 block mb-1">Big Bass Fee ($ / Boat)</label>
@@ -136,7 +139,7 @@
         </div>
         <div>
           <label class="text-[11px] font-bold uppercase text-slate-400 block mb-1">House Cut (%)</label>
-          <input type="number" id="inputHouseCut" value="10" min="0" max="100" step="1" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white font-mono font-bold text-sm focus:border-blue-500 focus:outline-none" />
+          <input type="number" id="inputHouseCut" value="0" min="0" max="100" step="1" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white font-mono font-bold text-sm focus:border-blue-500 focus:outline-none" />
         </div>
         <div>
           <label class="text-[11px] font-bold uppercase text-slate-400 block mb-1">Places Paid Override</label>
@@ -163,7 +166,7 @@
           <div id="grossPurse" class="text-2xl font-black font-mono text-white mt-1">$0.00</div>
         </div>
         <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg">
-          <span class="text-[10px] font-bold uppercase text-amber-400">Big Bass Pot</span>
+          <span class="text-[10px] font-bold uppercase text-amber-400">Big Bass Pot (100%)</span>
           <div id="bigBassPurse" class="text-2xl font-black font-mono text-amber-400 mt-1">$0.00</div>
         </div>
         <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg">
@@ -244,11 +247,11 @@
             <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg space-y-2 text-xs font-bold">
               <label class="flex items-center gap-2 text-slate-300 cursor-pointer">
                 <input type="checkbox" id="checkEntry" checked class="w-4 h-4 rounded text-blue-600 bg-slate-900 border-slate-700" />
-                <span>Paid Main Entry</span>
+                <span id="labelEntryFee">Paid Main Entry ($80)</span>
               </label>
               <label class="flex items-center gap-2 text-amber-400 cursor-pointer">
                 <input type="checkbox" id="checkBigBass" checked class="w-4 h-4 rounded text-amber-600 bg-slate-900 border-slate-700" />
-                <span>Paid Big Bass Side Pot</span>
+                <span>Paid Big Bass Side Pot ($20)</span>
               </label>
             </div>
 
@@ -296,7 +299,7 @@
         </div>
 
         <div class="mt-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg flex justify-between items-center">
-          <span class="text-xs font-black uppercase text-amber-400">Big Bass 1st Place:</span>
+          <span class="text-xs font-black uppercase text-amber-400">Big Bass 1st Place (100%):</span>
           <span id="bbPayoutDisplay" class="font-mono text-base font-black text-white">$0.00</span>
         </div>
       </div>
@@ -336,14 +339,14 @@
         <div>
           <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Tournament Trail / Series</label>
           <select id="newTournTrail" onchange="toggleDivisionVisibility()" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm font-bold focus:border-blue-500 focus:outline-none">
-            <option value="AAFL - Weekend Warrior Series">AAFL - Weekend Warrior Series</option>
             <option value="AAFL - Blue Collar Trail">AAFL - Blue Collar Trail (BCT)</option>
+            <option value="AAFL - Weekend Warrior Series">AAFL - Weekend Warrior Series</option>
             <option value="Open Tournament">Open Tournament</option>
           </select>
         </div>
 
         <!-- BCT DIVISION DYNAMIC SECTION -->
-        <div id="divisionContainer" class="hidden bg-slate-950/80 border border-amber-500/30 p-3 rounded-lg space-y-2">
+        <div id="divisionContainer" class="bg-slate-950/80 border border-amber-500/30 p-3 rounded-lg space-y-2">
           <div class="flex justify-between items-center">
             <label class="text-xs font-bold uppercase text-amber-400">Blue Collar Trail (BCT) Division</label>
             <span class="text-[10px] text-slate-400">Select or add new</span>
@@ -362,16 +365,16 @@
 
         <div>
           <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Event Title</label>
-          <input type="text" id="newTournTitle" required placeholder="e.g. BCT Harris Chain Open 2026" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" />
+          <input type="text" id="newTournTitle" required placeholder="e.g. BCT Toho Qualifier #1" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" />
         </div>
         <div>
           <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Lake / Body of Water</label>
-          <input type="text" id="newTournLake" required placeholder="e.g. Lake Harris / Venetian Gardens" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" />
+          <input type="text" id="newTournLake" required placeholder="e.g. Lake Tohopekaliga / Big Toho Marina" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" />
         </div>
         <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Unique PIN</label>
-            <input type="text" id="newTournPin" required placeholder="HARRIS26" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm uppercase font-mono focus:border-blue-500 focus:outline-none" />
+            <input type="text" id="newTournPin" required placeholder="TOHO26" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm uppercase font-mono focus:border-blue-500 focus:outline-none" />
           </div>
           <div>
             <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Event Date</label>
@@ -402,6 +405,7 @@
     const DEFAULT_DIVISIONS = ['Toho', 'Harris Chain', 'N. Florida'];
     let bctDivisions = JSON.parse(localStorage.getItem('aafl_bct_divisions')) || DEFAULT_DIVISIONS;
 
+    // STANDARD OPEN / WEEKEND WARRIOR SCALE PRESETS
     const SCALE_PRESETS = {
       1: [1.00],
       2: [0.65, 0.35],
@@ -410,6 +414,20 @@
       5: [0.40, 0.25, 0.16, 0.11, 0.08],
       7: [0.35, 0.22, 0.14, 0.10, 0.08, 0.06, 0.05],
       10: [0.30, 0.18, 0.12, 0.09, 0.08, 0.07, 0.06, 0.04, 0.03, 0.03]
+    };
+
+    // BCT 1-IN-6 FIXED PAYOUT DISTRIBUTION PRESETS (SUM = 100%)
+    const BCT_1_IN_6_PRESETS = {
+      1: [1.00],
+      2: [0.65, 0.35],
+      3: [0.50, 0.30, 0.20],
+      4: [0.45, 0.28, 0.17, 0.10],
+      5: [0.40, 0.25, 0.16, 0.11, 0.08],
+      6: [0.35, 0.23, 0.16, 0.12, 0.08, 0.06],
+      7: [0.32, 0.21, 0.15, 0.11, 0.09, 0.07, 0.05],
+      8: [0.30, 0.19, 0.14, 0.11, 0.09, 0.07, 0.06, 0.04],
+      9: [0.28, 0.18, 0.13, 0.10, 0.08, 0.07, 0.06, 0.05, 0.05],
+      10: [0.27, 0.17, 0.12, 0.09, 0.08, 0.07, 0.06, 0.05, 0.05, 0.04]
     };
 
     function getAutoTier(count) {
@@ -421,6 +439,13 @@
       if (count <= 50) return SCALE_PRESETS[5];
       if (count <= 75) return SCALE_PRESETS[7];
       return SCALE_PRESETS[10];
+    }
+
+    function getBct1In6Tier(count) {
+      if (count <= 0) return [];
+      if (count < 6) return BCT_1_IN_6_PRESETS[1];
+      const places = Math.min(10, Math.floor(count / 6) + 1);
+      return BCT_1_IN_6_PRESETS[places] || BCT_1_IN_6_PRESETS[10];
     }
 
     function populateDivisionDropdown() {
@@ -519,6 +544,7 @@
       });
 
       populateDivisionDropdown();
+      toggleDivisionVisibility();
       await preloadMembers();
       await loadSchedule();
       await loadData();
@@ -651,7 +677,7 @@
           <div onclick="selectTournamentFromSchedule('${t.id}')" class="cursor-pointer space-y-1.5">
             <div class="flex justify-between items-center gap-1">
               <span class="font-mono text-[9px] font-bold px-2 py-0.5 rounded ${trailStyle}">
-                ${t.trail_series || 'Weekend Warrior'}
+                ${t.trail_series || 'Blue Collar Trail'}
               </span>
               <span class="text-[10px] font-mono font-bold text-slate-400">
                 ${t.event_date || 'TBD'}
@@ -896,29 +922,89 @@
     }
 
     function calculatePurseAndPayout() {
+      const isBCT = activeTournament && (
+        activeTournament.trail_series === 'AAFL - Blue Collar Trail' || 
+        (activeTournament.title && activeTournament.title.includes('BCT'))
+      );
       const totalBoats = participants.length;
-      const entryFee = parseFloat(document.getElementById('inputEntryFee').value) || 0;
-      const bbFee = parseFloat(document.getElementById('inputBbFee').value) || 0;
-      const housePct = (parseFloat(document.getElementById('inputHouseCut').value) || 0) / 100;
-      const overrideVal = document.getElementById('inputPlacesPaid').value;
 
-      const grossMain = totalBoats * entryFee;
-      const houseCut = grossMain * housePct;
-      const netMain = Math.max(0, grossMain - houseCut);
-      const bbPurse = totalBoats * bbFee;
+      let entryFee, bbFee, housePct, netMain, bbPurse, tier;
 
+      if (isBCT) {
+        // Enforce locked BCT rulebook values
+        entryFee = 80.00;
+        bbFee = 20.00;
+        housePct = 0.00;
+
+        document.getElementById('bctRuleTag').classList.remove('hidden');
+
+        // Lock form fields
+        document.getElementById('inputEntryFee').value = 80;
+        document.getElementById('inputEntryFee').disabled = true;
+        document.getElementById('inputEntryFee').classList.add('opacity-60', 'cursor-not-allowed');
+
+        document.getElementById('inputBbFee').value = 20;
+        document.getElementById('inputBbFee').disabled = true;
+        document.getElementById('inputBbFee').classList.add('opacity-60', 'cursor-not-allowed');
+
+        document.getElementById('inputHouseCut').value = 0;
+        document.getElementById('inputHouseCut').disabled = true;
+        document.getElementById('inputHouseCut').classList.add('opacity-60', 'cursor-not-allowed');
+
+        document.getElementById('inputPlacesPaid').disabled = true;
+        document.getElementById('inputPlacesPaid').classList.add('opacity-60', 'cursor-not-allowed');
+
+        document.getElementById('labelEntryFee').innerText = 'Paid Main Entry ($80)';
+
+        // Net main purse: $65 per boat ($80 entry - $5 AAFL fee - $10 Director fee)
+        netMain = totalBoats * 65.00;
+        // Big Bass: 100% of collected funds
+        bbPurse = totalBoats * 20.00;
+        // 1 in 6 payout scale
+        tier = getBct1In6Tier(totalBoats);
+
+      } else {
+        // Open/Weekend Warrior editable fields
+        document.getElementById('bctRuleTag').classList.add('hidden');
+
+        document.getElementById('inputEntryFee').disabled = false;
+        document.getElementById('inputEntryFee').classList.remove('opacity-60', 'cursor-not-allowed');
+        document.getElementById('inputBbFee').disabled = false;
+        document.getElementById('inputBbFee').classList.remove('opacity-60', 'cursor-not-allowed');
+        document.getElementById('inputHouseCut').disabled = false;
+        document.getElementById('inputHouseCut').classList.remove('opacity-60', 'cursor-not-allowed');
+        document.getElementById('inputPlacesPaid').disabled = false;
+        document.getElementById('inputPlacesPaid').classList.remove('opacity-60', 'cursor-not-allowed');
+
+        entryFee = parseFloat(document.getElementById('inputEntryFee').value) || 0;
+        bbFee = parseFloat(document.getElementById('inputBbFee').value) || 0;
+        housePct = (parseFloat(document.getElementById('inputHouseCut').value) || 0) / 100;
+        
+        document.getElementById('labelEntryFee').innerText = `Paid Main Entry ($${entryFee})`;
+
+        const grossMain = totalBoats * entryFee;
+        netMain = Math.max(0, grossMain - (grossMain * housePct));
+        bbPurse = totalBoats * bbFee;
+
+        const overrideVal = document.getElementById('inputPlacesPaid').value;
+        tier = (overrideVal === 'auto') ? getAutoTier(totalBoats) : (SCALE_PRESETS[parseInt(overrideVal, 10)] || []);
+      }
+
+      // HUD Summaries
       document.getElementById('fieldCount').innerText = `${totalBoats} Boats`;
-      document.getElementById('grossPurse').innerText = `$${(grossMain + bbPurse).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+      document.getElementById('grossPurse').innerText = `$${((totalBoats * entryFee) + bbPurse).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
       document.getElementById('netPurse').innerText = `$${netMain.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
       document.getElementById('bigBassPurse').innerText = `$${bbPurse.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
       document.getElementById('bbPayoutDisplay').innerText = `$${bbPurse.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
 
-      let tier = (overrideVal === 'auto') ? getAutoTier(totalBoats) : (SCALE_PRESETS[parseInt(overrideVal, 10)] || []);
-      document.getElementById('placesPaidBadge').innerText = `${tier.length} Places Paid`;
+      document.getElementById('placesPaidBadge').innerText = isBCT 
+        ? `${tier.length} Places Paid (1-in-6 Scale)` 
+        : `${tier.length} Places Paid`;
 
       const firstEst = tier.length > 0 ? (netMain * tier[0]) : 0;
       document.getElementById('firstPlaceEstimate').innerText = `$${firstEst.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
 
+      // Payout Breakdown Table
       const tbody = document.getElementById('payoutTableBody');
       tbody.innerHTML = '';
 
@@ -935,7 +1021,7 @@
         tr.innerHTML = `
           <td class="py-1">${place === 1 ? '1st' : place === 2 ? '2nd' : place === 3 ? '3rd' : `${place}th`}</td>
           <td class="py-1 text-right text-slate-400">${(pct * 100).toFixed(0)}%</td>
-          <td class="py-1 text-right font-black">$${payout.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
+          <td class="py-1 text-right font-black">$${payout.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
         `;
         tbody.appendChild(tr);
       });
@@ -1110,9 +1196,10 @@
     async function createTournament(e) {
       e.preventDefault();
       const trail = document.getElementById('newTournTrail').value;
+      const isBCT = (trail === 'AAFL - Blue Collar Trail');
       let division = null;
 
-      if (trail === 'AAFL - Blue Collar Trail') {
+      if (isBCT) {
         const selectedDiv = document.getElementById('newTournDivision').value;
         if (selectedDiv === '__ADD_NEW__') {
           const customName = document.getElementById('customDivisionName').value.trim();
@@ -1149,7 +1236,10 @@
           division: division,
           lake_name: lake, 
           event_date: date, 
-          is_active: true 
+          is_active: true,
+          entry_fee: isBCT ? 80.00 : 150.00,
+          big_bass_fee: 20.00,
+          house_retention_pct: isBCT ? 0.00 : 10.00
         };
 
         if (currentUser) {
