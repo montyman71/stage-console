@@ -52,7 +52,7 @@
           <span>+ Add To Schedule</span>
         </button>
         <button onclick="confirmDeleteCurrentTournament()" class="px-3 py-2 bg-red-900/60 hover:bg-red-800 text-red-200 border border-red-700/60 rounded-lg text-xs font-bold transition flex items-center gap-1">
-          <span>🗑️ Delete Event</span>
+          <span>🗑️ Delete</span>
         </button>
         <a id="linkStage" href="index.html" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-black text-white transition">
           Stage Console →
@@ -62,6 +62,9 @@
         </a>
         <a id="linkResults" href="results.html" class="px-3.5 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg text-xs font-black text-white transition">
           Results & Wix
+        </a>
+        <a id="linkAudit" href="audit.html" class="px-3.5 py-2 bg-rose-700 hover:bg-rose-600 rounded-lg text-xs font-black text-white transition flex items-center gap-1.5 shadow-lg">
+          <span>🏁 End Event & Audit</span>
         </a>
         <a href="auth.html" class="px-2.5 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold text-slate-400">
           👤 Auth
@@ -177,7 +180,7 @@
     <!-- MAIN INTERACTIVE DECK -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-      <!-- COLUMN 1: REGISTRATION (AUTO-COMPLETE SEARCH + SEQUENTIAL/RANDOM BOAT ASSIGNMENT) -->
+      <!-- COLUMN 1: REGISTRATION (AUTO-COMPLETE SEARCH + BOAT ASSIGNMENT) -->
       <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-xl flex flex-col justify-between">
         <div>
           <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-2">
@@ -395,7 +398,7 @@
     let allTournaments = [];
     let registeredMembersCache = [];
 
-    // DEFAULT BCT DIVISIONS (PERSISTED LOCALLY & EXTENSIBLE)
+    // DEFAULT BCT DIVISIONS
     const DEFAULT_DIVISIONS = ['Toho', 'Harris Chain', 'N. Florida'];
     let bctDivisions = JSON.parse(localStorage.getItem('aafl_bct_divisions')) || DEFAULT_DIVISIONS;
 
@@ -473,18 +476,24 @@
         currentUser = session.user;
         document.getElementById('authGate').classList.add('hidden');
 
-        const { data: profile } = await client
-          .from('user_profiles')
-          .select('role')
-          .eq('id', currentUser.id)
-          .single();
+        // Check if user is coachmonty71@gmail.com or has admin role
+        if (currentUser.email && currentUser.email.toLowerCase() === 'coachmonty71@gmail.com') {
+          currentUserRole = 'admin';
+        } else {
+          const { data: profile } = await client
+            .from('user_profiles')
+            .select('role')
+            .eq('id', currentUser.id)
+            .single();
 
-        if (profile && profile.role) {
-          currentUserRole = profile.role;
-          if (currentUserRole === 'admin') {
-            document.getElementById('adminRoleBadge').classList.remove('hidden');
-            document.getElementById('scheduleSubtext').innerText = 'Administrator Master Access: Viewing all director schedules across the league';
+          if (profile && profile.role) {
+            currentUserRole = profile.role.toLowerCase();
           }
+        }
+
+        if (currentUserRole === 'admin') {
+          document.getElementById('adminRoleBadge').classList.remove('hidden');
+          document.getElementById('scheduleSubtext').innerText = 'Administrator Master Access: Viewing all director schedules across the league';
         }
       }
 
@@ -597,8 +606,12 @@
     async function loadSchedule() {
       let query = client.from('tournaments').select('*').order('event_date', { ascending: false });
 
+      // Scope to user's created BCT events if regular director
       if (currentUser && currentUserRole !== 'admin') {
-        query = query.or(`created_by.eq.${currentUser.id},created_by.is.null`);
+        query = query.eq('created_by', currentUser.id);
+        document.getElementById('scheduleSubtext').innerText = 'Director Station: Viewing your assigned BCT events only';
+      } else if (currentUserRole === 'admin') {
+        document.getElementById('scheduleSubtext').innerText = 'Administrator Master Access: Viewing all director schedules across the league';
       }
 
       const { data } = await query;
@@ -690,7 +703,7 @@
         return;
       }
 
-      const { error } = await client.rpc('delete_tournament_cascade', { p_tournament_id: id });
+      const { error } = await client.from('tournaments').delete().eq('id', id);
 
       if (error) {
         alert('Delete failed: ' + error.message);
@@ -726,7 +739,7 @@
         if (targetId) {
           query = query.eq('id', targetId);
         } else if (currentUser && currentUserRole !== 'admin') {
-          query = query.or(`created_by.eq.${currentUser.id},created_by.is.null`).order('created_at', { ascending: false });
+          query = query.eq('created_by', currentUser.id).order('created_at', { ascending: false });
         } else {
           query = query.order('created_at', { ascending: false });
         }
@@ -747,6 +760,7 @@
         document.getElementById('linkStage').href = `index.html?tid=${activeTournament.id}`;
         document.getElementById('linkCheckin').href = `checkin.html?tid=${activeTournament.id}`;
         document.getElementById('linkResults').href = `results.html?tid=${activeTournament.id}`;
+        document.getElementById('linkAudit').href = `audit.html?tid=${activeTournament.id}`;
 
         document.getElementById('tournamentHeading').innerText = activeTournament.title.toUpperCase();
         document.getElementById('syncDot').className = 'w-3 h-3 rounded-full bg-emerald-500';

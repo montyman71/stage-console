@@ -82,10 +82,13 @@
           🪪 Members
         </a>
         <a id="linkJumbotron" href="jumbotron.html" target="_blank" class="px-3.5 py-2 bg-amber-600 hover:bg-amber-500 font-black text-xs text-white rounded-lg transition shadow-lg">
-          📺 Jumbotron Feed
+          📺 Jumbotron
         </a>
         <a id="linkResults" href="results.html" class="px-3 py-2 bg-purple-600 hover:bg-purple-500 font-bold text-xs text-white rounded-lg transition">
           Results & Points
+        </a>
+        <a id="linkAuditStage" href="audit.html" class="px-3.5 py-2 bg-rose-700 hover:bg-rose-600 rounded-lg text-xs font-black text-white transition flex items-center gap-1 shadow-lg">
+          <span>🏁 End Event & Audit</span>
         </a>
       </div>
     </div>
@@ -386,6 +389,7 @@
       // Update Navigation Links
       document.getElementById('linkRegister').href = `register.html?tid=${currentTournament.id}`;
       document.getElementById('linkResults').href = `results.html?tid=${currentTournament.id}`;
+      document.getElementById('linkAuditStage').href = `audit.html?tid=${currentTournament.id}`;
 
       // Update UI Headings
       document.getElementById('stageTitle').innerText = currentTournament.title.toUpperCase();
@@ -587,7 +591,7 @@
           weight: payload
         });
 
-        // Trigger TSP100III Weigh Ticket Print Automatically
+        // Trigger Star TSP100III Weigh Ticket Print Automatically
         printWeighTicket({
           participant_id: activeParticipant.id,
           display_name: activeParticipant.display_name,
