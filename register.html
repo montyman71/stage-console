@@ -118,12 +118,12 @@
       </div>
     </div>
 
-    <!-- PURSE SUMMARY HUD (WITH BCT FIXED RULE ENFORCEMENT) -->
+    <!-- PURSE SUMMARY HUD (WITH TRAIL-SPECIFIC RULE ENFORCEMENT) -->
     <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl shadow-xl space-y-4">
       <div class="flex items-center justify-between border-b border-slate-800 pb-2">
         <div class="flex items-center gap-2">
           <h2 class="text-xs font-black uppercase text-amber-400 tracking-widest">⚙️ Fee Parameters & Real-Time Purse</h2>
-          <span id="bctRuleTag" class="hidden text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded">🔒 BCT FIXED RULES ($65/BOAT NET • 1-IN-6 SCALE)</span>
+          <span id="bctRuleTag" class="hidden text-[10px] font-mono font-bold px-2 py-0.5 rounded">🔒 FIXED TRAIL RULES</span>
         </div>
         <span class="text-[11px] text-slate-400">Syncs dynamically with registered field</span>
       </div>
@@ -135,7 +135,7 @@
         </div>
         <div>
           <label class="text-[11px] font-bold uppercase text-slate-400 block mb-1">Big Bass Fee ($ / Boat)</label>
-          <input type="number" id="inputBbFee" value="20" step="5" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white font-mono font-bold text-sm focus:border-blue-500 focus:outline-none" />
+          <input type="text" id="inputBbFee" value="20" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white font-mono font-bold text-sm focus:border-blue-500 focus:outline-none" />
         </div>
         <div>
           <label class="text-[11px] font-bold uppercase text-slate-400 block mb-1">House Cut (%)</label>
@@ -144,7 +144,7 @@
         <div>
           <label class="text-[11px] font-bold uppercase text-slate-400 block mb-1">Places Paid Override</label>
           <select id="inputPlacesPaid" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white font-mono font-bold text-xs focus:border-blue-500 focus:outline-none">
-            <option value="auto">Auto (Official AAFL Scale)</option>
+            <option value="auto">Auto (Official Scale)</option>
             <option value="1">Top 1 Spot (100%)</option>
             <option value="2">Top 2 Spots (65 / 35)</option>
             <option value="3">Top 3 Spots (50 / 30 / 20)</option>
@@ -166,7 +166,7 @@
           <div id="grossPurse" class="text-2xl font-black font-mono text-white mt-1">$0.00</div>
         </div>
         <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg">
-          <span class="text-[10px] font-bold uppercase text-amber-400">Big Bass Pot (100%)</span>
+          <span class="text-[10px] font-bold uppercase text-amber-400">Big Bass Pot</span>
           <div id="bigBassPurse" class="text-2xl font-black font-mono text-amber-400 mt-1">$0.00</div>
         </div>
         <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg">
@@ -247,11 +247,11 @@
             <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg space-y-2 text-xs font-bold">
               <label class="flex items-center gap-2 text-slate-300 cursor-pointer">
                 <input type="checkbox" id="checkEntry" checked class="w-4 h-4 rounded text-blue-600 bg-slate-900 border-slate-700" />
-                <span id="labelEntryFee">Paid Main Entry ($80)</span>
+                <span id="labelEntryFee">Paid Main Entry</span>
               </label>
               <label class="flex items-center gap-2 text-amber-400 cursor-pointer">
                 <input type="checkbox" id="checkBigBass" checked class="w-4 h-4 rounded text-amber-600 bg-slate-900 border-slate-700" />
-                <span>Paid Big Bass Side Pot ($20)</span>
+                <span id="labelBigBassFee">Paid Big Bass Side Pot</span>
               </label>
             </div>
 
@@ -299,7 +299,7 @@
         </div>
 
         <div class="mt-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg flex justify-between items-center">
-          <span class="text-xs font-black uppercase text-amber-400">Big Bass 1st Place (100%):</span>
+          <span class="text-xs font-black uppercase text-amber-400">Big Bass 1st Place:</span>
           <span id="bbPayoutDisplay" class="font-mono text-base font-black text-white">$0.00</span>
         </div>
       </div>
@@ -326,7 +326,7 @@
     </div>
   </div>
 
-  <!-- MODAL: ADD TOURNAMENT TO SCHEDULE (WITH DYNAMIC DIVISION MANAGER) -->
+  <!-- MODAL: ADD TOURNAMENT TO SCHEDULE -->
   <div id="newTournamentModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
     <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-lg w-full shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b border-slate-800 pb-2">
@@ -339,14 +339,14 @@
         <div>
           <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Tournament Trail / Series</label>
           <select id="newTournTrail" onchange="toggleDivisionVisibility()" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm font-bold focus:border-blue-500 focus:outline-none">
-            <option value="AAFL - Blue Collar Trail">AAFL - Blue Collar Trail (BCT)</option>
             <option value="AAFL - Weekend Warrior Series">AAFL - Weekend Warrior Series</option>
+            <option value="AAFL - Blue Collar Trail">AAFL - Blue Collar Trail (BCT)</option>
             <option value="Open Tournament">Open Tournament</option>
           </select>
         </div>
 
         <!-- BCT DIVISION DYNAMIC SECTION -->
-        <div id="divisionContainer" class="bg-slate-950/80 border border-amber-500/30 p-3 rounded-lg space-y-2">
+        <div id="divisionContainer" class="hidden bg-slate-950/80 border border-amber-500/30 p-3 rounded-lg space-y-2">
           <div class="flex justify-between items-center">
             <label class="text-xs font-bold uppercase text-amber-400">Blue Collar Trail (BCT) Division</label>
             <span class="text-[10px] text-slate-400">Select or add new</span>
@@ -365,16 +365,16 @@
 
         <div>
           <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Event Title</label>
-          <input type="text" id="newTournTitle" required placeholder="e.g. BCT Toho Qualifier #1" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" />
+          <input type="text" id="newTournTitle" required placeholder="e.g. Weekend Warrior Qualifier #1" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" />
         </div>
         <div>
           <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Lake / Body of Water</label>
-          <input type="text" id="newTournLake" required placeholder="e.g. Lake Tohopekaliga / Big Toho Marina" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" />
+          <input type="text" id="newTournLake" required placeholder="e.g. Lake Harris / Venetian Gardens" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" />
         </div>
         <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Unique PIN</label>
-            <input type="text" id="newTournPin" required placeholder="TOHO26" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm uppercase font-mono focus:border-blue-500 focus:outline-none" />
+            <input type="text" id="newTournPin" required placeholder="WW2026" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm uppercase font-mono focus:border-blue-500 focus:outline-none" />
           </div>
           <div>
             <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Event Date</label>
@@ -405,7 +405,7 @@
     const DEFAULT_DIVISIONS = ['Toho', 'Harris Chain', 'N. Florida'];
     let bctDivisions = JSON.parse(localStorage.getItem('aafl_bct_divisions')) || DEFAULT_DIVISIONS;
 
-    // STANDARD OPEN / WEEKEND WARRIOR SCALE PRESETS
+    // STANDARD OPEN TOURNAMENT SCALE PRESETS
     const SCALE_PRESETS = {
       1: [1.00],
       2: [0.65, 0.35],
@@ -446,6 +446,50 @@
       if (count < 6) return BCT_1_IN_6_PRESETS[1];
       const places = Math.min(10, Math.floor(count / 6) + 1);
       return BCT_1_IN_6_PRESETS[places] || BCT_1_IN_6_PRESETS[10];
+    }
+
+    // WEEKEND WARRIOR TIERED BIG BASS: $250 per 25 boats, capped at $1,000
+    function getWeekendWarriorBigBass(boats) {
+      if (boats <= 0) return 0;
+      const tier = Math.min(4, Math.floor((boats - 1) / 25) + 1);
+      return Math.min(1000, tier * 250);
+    }
+
+    // WEEKEND WARRIOR TOP-20% PAYOUT CURVE
+    function computeWeekendWarriorPayouts(totalBoats) {
+      if (totalBoats <= 0) return [];
+      const netPurse = totalBoats * 350.0 * 0.80; // 80% payback ($280/boat)
+      const placesPaid = Math.max(1, Math.round(totalBoats * 0.20));
+
+      if (placesPaid === 1) return [netPurse];
+      if (placesPaid === 2) {
+        const first = Math.min(netPurse - 350, totalBoats * 100.0);
+        return [first, netPurse - first];
+      }
+
+      // 1st place: $100 per boat ($2,500 @ 25, $5,000 @ 50, $7,500 @ 75, $10,000 @ 100)
+      const firstPlace = totalBoats * 100.0;
+      const lastPlace = 350.0; // Entry fee back guarantee
+      const nMid = placesPaid - 2;
+      const remainingPurse = netPurse - firstPlace - lastPlace;
+      const surplus = remainingPurse - (nMid * 350.0);
+
+      let decayWeights = [];
+      for (let i = 0; i < nMid; i++) {
+        decayWeights.push(Math.pow(nMid - i, 1.45));
+      }
+      const weightSum = decayWeights.reduce((a, b) => a + b, 0);
+
+      let midPayouts = decayWeights.map(w => {
+        const amount = 350.0 + (surplus * (w / weightSum));
+        return Math.round(amount / 25.0) * 25.0; // round to clean $25 increments
+      });
+
+      // Balance rounding differences to 2nd place
+      const currentSum = firstPlace + lastPlace + midPayouts.reduce((a, b) => a + b, 0);
+      midPayouts[0] += (netPurse - currentSum);
+
+      return [firstPlace, ...midPayouts, lastPlace];
     }
 
     function populateDivisionDropdown() {
@@ -501,7 +545,6 @@
         currentUser = session.user;
         document.getElementById('authGate').classList.add('hidden');
 
-        // Check if user is coachmonty71@gmail.com or has admin role
         if (currentUser.email && currentUser.email.toLowerCase() === 'coachmonty71@gmail.com') {
           currentUserRole = 'admin';
         } else {
@@ -536,7 +579,6 @@
         updateFlightTagForInput();
       });
 
-      // Hide member dropdown when clicking outside
       document.addEventListener('click', (e) => {
         if (!e.target.closest('#captainName') && !e.target.closest('#memberSearchResults')) {
           document.getElementById('memberSearchResults').classList.add('hidden');
@@ -551,7 +593,6 @@
       setupCrossScreenListeners();
     });
 
-    // PRELOAD ACTIVE ANGLER MEMBERSHIPS FOR INSTANT AUTO-COMPLETE
     async function preloadMembers() {
       try {
         const { data } = await client
@@ -632,10 +673,9 @@
     async function loadSchedule() {
       let query = client.from('tournaments').select('*').order('event_date', { ascending: false });
 
-      // Scope to user's created BCT events if regular director
       if (currentUser && currentUserRole !== 'admin') {
         query = query.eq('created_by', currentUser.id);
-        document.getElementById('scheduleSubtext').innerText = 'Director Station: Viewing your assigned BCT events only';
+        document.getElementById('scheduleSubtext').innerText = 'Director Station: Viewing your assigned events only';
       } else if (currentUserRole === 'admin') {
         document.getElementById('scheduleSubtext').innerText = 'Administrator Master Access: Viewing all director schedules across the league';
       }
@@ -677,7 +717,7 @@
           <div onclick="selectTournamentFromSchedule('${t.id}')" class="cursor-pointer space-y-1.5">
             <div class="flex justify-between items-center gap-1">
               <span class="font-mono text-[9px] font-bold px-2 py-0.5 rounded ${trailStyle}">
-                ${t.trail_series || 'Blue Collar Trail'}
+                ${t.trail_series || 'Weekend Warrior'}
               </span>
               <span class="text-[10px] font-mono font-bold text-slate-400">
                 ${t.event_date || 'TBD'}
@@ -691,7 +731,7 @@
             ` : ''}
 
             <h3 class="font-bold text-xs text-white line-clamp-1">${t.title}</h3>
-            <p class="text-[11px] text-slate-400 line-clamp-1">📍 ${t.lake_name || 'Lake Fork'}</p>
+            <p class="text-[11px] text-slate-400 line-clamp-1">📍 ${t.lake_name || 'Tournament Water'}</p>
           </div>
 
           <div class="mt-2.5 pt-2 border-t border-slate-800/80 flex justify-between items-center">
@@ -926,19 +966,21 @@
         activeTournament.trail_series === 'AAFL - Blue Collar Trail' || 
         (activeTournament.title && activeTournament.title.includes('BCT'))
       );
-      const totalBoats = participants.length;
+      const isWeekendWarrior = activeTournament && (
+        activeTournament.trail_series === 'AAFL - Weekend Warrior Series' ||
+        (activeTournament.title && activeTournament.title.toLowerCase().includes('weekend warrior'))
+      );
 
+      const totalBoats = participants.length;
       let entryFee, bbFee, housePct, netMain, bbPurse, tier;
 
       if (isBCT) {
-        // Enforce locked BCT rulebook values
+        // ================= BCT FIXED RULES =================
         entryFee = 80.00;
-        bbFee = 20.00;
-        housePct = 0.00;
-
+        document.getElementById('bctRuleTag').innerText = '🔒 BCT FIXED RULES ($65/BOAT NET • 1-IN-6 SCALE)';
+        document.getElementById('bctRuleTag').className = 'text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded';
         document.getElementById('bctRuleTag').classList.remove('hidden');
 
-        // Lock form fields
         document.getElementById('inputEntryFee').value = 80;
         document.getElementById('inputEntryFee').disabled = true;
         document.getElementById('inputEntryFee').classList.add('opacity-60', 'cursor-not-allowed');
@@ -955,16 +997,114 @@
         document.getElementById('inputPlacesPaid').classList.add('opacity-60', 'cursor-not-allowed');
 
         document.getElementById('labelEntryFee').innerText = 'Paid Main Entry ($80)';
+        document.getElementById('labelBigBassFee').innerText = 'Paid Big Bass Side Pot ($20)';
 
-        // Net main purse: $65 per boat ($80 entry - $5 AAFL fee - $10 Director fee)
         netMain = totalBoats * 65.00;
-        // Big Bass: 100% of collected funds
         bbPurse = totalBoats * 20.00;
-        // 1 in 6 payout scale
         tier = getBct1In6Tier(totalBoats);
 
+        // Standard percentage rendering for BCT
+        document.getElementById('fieldCount').innerText = `${totalBoats} Boats`;
+        document.getElementById('grossPurse').innerText = `$${((totalBoats * entryFee) + bbPurse).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+        document.getElementById('netPurse').innerText = `$${netMain.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+        document.getElementById('bigBassPurse').innerText = `$${bbPurse.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+        document.getElementById('bbPayoutDisplay').innerText = `$${bbPurse.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+        document.getElementById('placesPaidBadge').innerText = `${tier.length} Places Paid (1-in-6 Scale)`;
+
+        const firstEst = tier.length > 0 ? (netMain * tier[0]) : 0;
+        document.getElementById('firstPlaceEstimate').innerText = `$${firstEst.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+
+        const tbody = document.getElementById('payoutTableBody');
+        tbody.innerHTML = '';
+
+        if (tier.length === 0 || totalBoats === 0) {
+          tbody.innerHTML = '<tr><td colspan="3" class="py-2 text-center text-slate-500">Register boats to calculate purse</td></tr>';
+          return;
+        }
+
+        tier.forEach((pct, idx) => {
+          const place = idx + 1;
+          const payout = netMain * pct;
+          const tr = document.createElement('tr');
+          tr.className = idx === 0 ? 'text-amber-300 font-bold' : 'text-slate-300';
+          tr.innerHTML = `
+            <td class="py-1">${place === 1 ? '🥇 1st' : place === 2 ? '🥈 2nd' : place === 3 ? '🥉 3rd' : `${place}th`}</td>
+            <td class="py-1 text-right text-slate-400">${(pct * 100).toFixed(0)}%</td>
+            <td class="py-1 text-right font-black">$${payout.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+      } else if (isWeekendWarrior) {
+        // ================= WEEKEND WARRIOR TOP-20% RULES =================
+        entryFee = 350.00;
+        document.getElementById('bctRuleTag').innerText = '🔒 WEEKEND WARRIOR (TOP 20% PAID • LAST SPOT GETS $350 BACK)';
+        document.getElementById('bctRuleTag').className = 'text-[10px] font-mono font-bold bg-blue-500/20 text-blue-300 border border-blue-500/40 px-2 py-0.5 rounded';
+        document.getElementById('bctRuleTag').classList.remove('hidden');
+
+        document.getElementById('inputEntryFee').value = 350;
+        document.getElementById('inputEntryFee').disabled = true;
+        document.getElementById('inputEntryFee').classList.add('opacity-60', 'cursor-not-allowed');
+
+        document.getElementById('inputBbFee').value = 'Tiered';
+        document.getElementById('inputBbFee').disabled = true;
+        document.getElementById('inputBbFee').classList.add('opacity-60', 'cursor-not-allowed');
+
+        document.getElementById('inputHouseCut').value = 20; // 80% payback, 20% to AAFL
+        document.getElementById('inputHouseCut').disabled = true;
+        document.getElementById('inputHouseCut').classList.add('opacity-60', 'cursor-not-allowed');
+
+        document.getElementById('inputPlacesPaid').disabled = true;
+        document.getElementById('inputPlacesPaid').classList.add('opacity-60', 'cursor-not-allowed');
+
+        document.getElementById('labelEntryFee').innerText = 'Paid Main Entry ($350)';
+        document.getElementById('labelBigBassFee').innerText = 'Paid Big Bass (Included in Purse)';
+
+        netMain = totalBoats * 350.00 * 0.80;
+        bbPurse = getWeekendWarriorBigBass(totalBoats);
+
+        const dollarPayouts = computeWeekendWarriorPayouts(totalBoats);
+
+        document.getElementById('fieldCount').innerText = `${totalBoats} Boats`;
+        document.getElementById('grossPurse').innerText = `$${((totalBoats * 350) + bbPurse).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+        document.getElementById('netPurse').innerText = `$${netMain.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+        document.getElementById('bigBassPurse').innerText = `$${bbPurse.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+        document.getElementById('bbPayoutDisplay').innerText = `$${bbPurse.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+        document.getElementById('placesPaidBadge').innerText = `${dollarPayouts.length} Places Paid (Top 20%)`;
+        document.getElementById('firstPlaceEstimate').innerText = dollarPayouts.length > 0 ? `$${dollarPayouts[0].toLocaleString('en-US', { minimumFractionDigits: 2 })}` : '$0.00';
+
+        const tbody = document.getElementById('payoutTableBody');
+        tbody.innerHTML = '';
+
+        if (dollarPayouts.length === 0 || totalBoats === 0) {
+          tbody.innerHTML = '<tr><td colspan="3" class="py-2 text-center text-slate-500">Register boats to calculate purse</td></tr>';
+          return;
+        }
+
+        dollarPayouts.forEach((amount, idx) => {
+          const place = idx + 1;
+          const isLast = (idx === dollarPayouts.length - 1 && dollarPayouts.length > 1);
+          const pct = ((amount / netMain) * 100).toFixed(1);
+          const tr = document.createElement('tr');
+          tr.className = idx === 0 
+            ? 'text-amber-300 font-bold' 
+            : isLast 
+            ? 'text-emerald-400 font-bold' 
+            : 'text-slate-300';
+
+          tr.innerHTML = `
+            <td class="py-1">
+              ${place === 1 ? '🥇 1st' : place === 2 ? '🥈 2nd' : place === 3 ? '🥉 3rd' : `${place}th`}
+              ${isLast ? '<span class="text-[9px] text-emerald-400 ml-1 font-mono uppercase">(Entry Fee Back)</span>' : ''}
+            </td>
+            <td class="py-1 text-right text-slate-400 font-mono">${pct}%</td>
+            <td class="py-1 text-right font-black font-mono">$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+
       } else {
-        // Open/Weekend Warrior editable fields
+        // ================= OPEN / CUSTOM TOURNAMENTS =================
         document.getElementById('bctRuleTag').classList.add('hidden');
 
         document.getElementById('inputEntryFee').disabled = false;
@@ -981,6 +1121,7 @@
         housePct = (parseFloat(document.getElementById('inputHouseCut').value) || 0) / 100;
         
         document.getElementById('labelEntryFee').innerText = `Paid Main Entry ($${entryFee})`;
+        document.getElementById('labelBigBassFee').innerText = `Paid Big Bass Side Pot ($${bbFee})`;
 
         const grossMain = totalBoats * entryFee;
         netMain = Math.max(0, grossMain - (grossMain * housePct));
@@ -988,43 +1129,38 @@
 
         const overrideVal = document.getElementById('inputPlacesPaid').value;
         tier = (overrideVal === 'auto') ? getAutoTier(totalBoats) : (SCALE_PRESETS[parseInt(overrideVal, 10)] || []);
+
+        document.getElementById('fieldCount').innerText = `${totalBoats} Boats`;
+        document.getElementById('grossPurse').innerText = `$${((totalBoats * entryFee) + bbPurse).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+        document.getElementById('netPurse').innerText = `$${netMain.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+        document.getElementById('bigBassPurse').innerText = `$${bbPurse.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+        document.getElementById('bbPayoutDisplay').innerText = `$${bbPurse.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+        document.getElementById('placesPaidBadge').innerText = `${tier.length} Places Paid`;
+
+        const firstEst = tier.length > 0 ? (netMain * tier[0]) : 0;
+        document.getElementById('firstPlaceEstimate').innerText = `$${firstEst.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+
+        const tbody = document.getElementById('payoutTableBody');
+        tbody.innerHTML = '';
+
+        if (tier.length === 0 || totalBoats === 0) {
+          tbody.innerHTML = '<tr><td colspan="3" class="py-2 text-center text-slate-500">Register boats to calculate purse</td></tr>';
+          return;
+        }
+
+        tier.forEach((pct, idx) => {
+          const place = idx + 1;
+          const payout = netMain * pct;
+          const tr = document.createElement('tr');
+          tr.className = idx === 0 ? 'text-amber-300 font-bold' : 'text-slate-300';
+          tr.innerHTML = `
+            <td class="py-1">${place === 1 ? '🥇 1st' : place === 2 ? '🥈 2nd' : place === 3 ? '🥉 3rd' : `${place}th`}</td>
+            <td class="py-1 text-right text-slate-400 font-mono">${(pct * 100).toFixed(0)}%</td>
+            <td class="py-1 text-right font-black font-mono">$${payout.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+          `;
+          tbody.appendChild(tr);
+        });
       }
-
-      // HUD Summaries
-      document.getElementById('fieldCount').innerText = `${totalBoats} Boats`;
-      document.getElementById('grossPurse').innerText = `$${((totalBoats * entryFee) + bbPurse).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-      document.getElementById('netPurse').innerText = `$${netMain.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-      document.getElementById('bigBassPurse').innerText = `$${bbPurse.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-      document.getElementById('bbPayoutDisplay').innerText = `$${bbPurse.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-
-      document.getElementById('placesPaidBadge').innerText = isBCT 
-        ? `${tier.length} Places Paid (1-in-6 Scale)` 
-        : `${tier.length} Places Paid`;
-
-      const firstEst = tier.length > 0 ? (netMain * tier[0]) : 0;
-      document.getElementById('firstPlaceEstimate').innerText = `$${firstEst.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-
-      // Payout Breakdown Table
-      const tbody = document.getElementById('payoutTableBody');
-      tbody.innerHTML = '';
-
-      if (tier.length === 0 || totalBoats === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" class="py-2 text-center text-slate-500">Register boats to calculate purse</td></tr>';
-        return;
-      }
-
-      tier.forEach((pct, idx) => {
-        const place = idx + 1;
-        const payout = netMain * pct;
-        const tr = document.createElement('tr');
-        tr.className = idx === 0 ? 'text-amber-300 font-bold' : 'text-slate-300';
-        tr.innerHTML = `
-          <td class="py-1">${place === 1 ? '1st' : place === 2 ? '2nd' : place === 3 ? '3rd' : `${place}th`}</td>
-          <td class="py-1 text-right text-slate-400">${(pct * 100).toFixed(0)}%</td>
-          <td class="py-1 text-right font-black">$${payout.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-        `;
-        tbody.appendChild(tr);
-      });
     }
 
     function renderRoster() {
@@ -1044,7 +1180,7 @@
         const card = document.createElement('div');
         card.className = 'p-3 rounded-lg border bg-slate-950/90 border-slate-800 flex justify-between items-center';
 
-        const lake = document.getElementById('lakeInput').value || 'Lake Fork';
+        const lake = document.getElementById('lakeInput').value || 'Tournament Water';
         const date = document.getElementById('dateInput').value || 'Tournament Day';
         const rawPhone = p.phone ? p.phone.replace(/[^0-9]/g, '') : '';
         const smsBody = encodeURIComponent(
@@ -1197,6 +1333,7 @@
       e.preventDefault();
       const trail = document.getElementById('newTournTrail').value;
       const isBCT = (trail === 'AAFL - Blue Collar Trail');
+      const isWW = (trail === 'AAFL - Weekend Warrior Series');
       let division = null;
 
       if (isBCT) {
@@ -1237,9 +1374,9 @@
           lake_name: lake, 
           event_date: date, 
           is_active: true,
-          entry_fee: isBCT ? 80.00 : 150.00,
-          big_bass_fee: 20.00,
-          house_retention_pct: isBCT ? 0.00 : 10.00
+          entry_fee: isBCT ? 80.00 : isWW ? 350.00 : 150.00,
+          big_bass_fee: isBCT ? 20.00 : isWW ? 0.00 : 20.00,
+          house_retention_pct: isBCT ? 0.00 : isWW ? 20.00 : 10.00
         };
 
         if (currentUser) {
