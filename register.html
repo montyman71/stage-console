@@ -119,7 +119,7 @@
       </div>
     </div>
 
-    <!-- PURSE SUMMARY HUD (WITH TRAIL-SPECIFIC RULE ENFORCEMENT) -->
+    <!-- PURSE SUMMARY HUD -->
     <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl shadow-xl space-y-4">
       <div class="flex items-center justify-between border-b border-slate-800 pb-2">
         <div class="flex items-center gap-2">
@@ -184,7 +184,7 @@
     <!-- MAIN INTERACTIVE DECK -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-      <!-- COLUMN 1: REGISTRATION -->
+      <!-- COLUMN 1: REGISTRATION FORM -->
       <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-xl flex flex-col justify-between">
         <div>
           <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-2">
@@ -224,7 +224,7 @@
             </div>
 
             <div>
-              <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Captain Mobile Phone (For SMS)</label>
+              <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Captain Mobile Phone (For SMS & Waiver)</label>
               <input type="tel" id="captainPhone" placeholder="(555) 000-0000" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm font-mono focus:border-blue-500 focus:outline-none" />
             </div>
 
@@ -857,7 +857,6 @@
         if (activeTournament.first_weighin_time) document.getElementById('weighinTimeInput').value = activeTournament.first_weighin_time.substring(0, 5);
         if (activeTournament.boats_per_flight) document.getElementById('boatsPerFlightInput').value = activeTournament.boats_per_flight;
 
-        // Fetch participants (online + offline merged)
         let fetchedParticipants = [];
         if (navigator.onLine) {
           try {
@@ -1204,6 +1203,10 @@
         const lake = document.getElementById('lakeInput').value || 'Tournament Water';
         const date = document.getElementById('dateInput').value || 'Tournament Day';
         const rawPhone = p.phone ? p.phone.replace(/[^0-9]/g, '') : '';
+        
+        // Waiver URL link for this participant
+        const waiverUrl = `${window.location.origin}${window.location.pathname.replace('register.html', 'waiver.html')}?tid=${activeTournament ? activeTournament.id : ''}&pid=${p.id}&name=${encodeURIComponent(p.display_name)}&phone=${encodeURIComponent(p.phone || '')}&boat=${boatNum}`;
+
         const smsBody = encodeURIComponent(
           `AAFL OFFICIAL NOTICE:\n` +
           `Series: ${activeTournament.trail_series || 'AAFL'}\n` +
@@ -1213,7 +1216,9 @@
           `Boat #: ${boatNum}\n` +
           `Flight: ${flightNum}\n` +
           `Takeoff: ${launchTime}\n` +
-          `Weigh-In Due: ${weighinTime}\n` +
+          `Weigh-In Due: ${weighinTime}\n\n` +
+          `REQUIRED WAIVER - Tap to sign prior to launch:\n` +
+          `${waiverUrl}\n\n` +
           `Tight lines!`
         );
 
@@ -1233,8 +1238,11 @@
             ${p.phone ? `<div class="text-[10px] text-blue-400 font-mono mt-0.5">📞 ${p.phone}</div>` : ''}
           </div>
 
-          <div class="flex items-center gap-2">
-            <a href="${smsLink}" title="Send SMS Confirmation" class="px-2.5 py-1.5 bg-emerald-600/20 border border-emerald-500/40 text-emerald-400 rounded-lg text-xs font-bold hover:bg-emerald-600 hover:text-white transition flex items-center gap-1">
+          <div class="flex items-center gap-1.5">
+            <a href="${waiverUrl}" target="_blank" title="Open Legal Waiver" class="px-2 py-1.5 bg-amber-500/20 border border-amber-500/40 text-amber-300 rounded-lg text-xs font-bold hover:bg-amber-500 hover:text-black transition">
+              ✍️ Waiver
+            </a>
+            <a href="${smsLink}" title="Send SMS Confirmation & Waiver" class="px-2 py-1.5 bg-emerald-600/20 border border-emerald-500/40 text-emerald-400 rounded-lg text-xs font-bold hover:bg-emerald-600 hover:text-white transition flex items-center gap-1">
               💬 Text
             </a>
             <button onclick="removeParticipant('${p.id}')" class="text-slate-600 hover:text-red-400 text-xs px-1 font-bold">✕</button>
@@ -1312,12 +1320,11 @@
         created_at: new Date().toISOString()
       };
 
-      // 1. Write to device local storage queue immediately
+      // Save to offline storage immediately
       let localRoster = JSON.parse(localStorage.getItem(`offline_roster_${activeTournament.id}`) || '[]');
       localRoster.push(newParticipant);
       localStorage.setItem(`offline_roster_${activeTournament.id}`, JSON.stringify(localRoster));
 
-      // 2. Immediately update in-memory state and UI
       participants.push(newParticipant);
       renderRoster();
       calculatePurseAndPayout();
@@ -1328,7 +1335,18 @@
       document.getElementById('partnerName').value = '';
       document.getElementById('captainPhone').value = '';
 
-      // 3. Cloud sync if online
+      // Build and dispatch waiver SMS to boater
+      if (phone) {
+        const rawPhone = phone.replace(/[^0-9]/g, '');
+        const waiverUrl = `${window.location.origin}${window.location.pathname.replace('register.html', 'waiver.html')}?tid=${activeTournament.id}&pid=${newParticipant.id}&name=${encodeURIComponent(capName)}&phone=${encodeURIComponent(phone)}&boat=${boatNum}`;
+        const waiverSms = encodeURIComponent(
+          `AAFL MANDATORY PRE-LAUNCH WAIVER:\n` +
+          `Hello ${capName}, please tap the link below to sign your official liability waiver for Boat #${boatNum} prior to morning launch:\n` +
+          `${waiverUrl}`
+        );
+        window.open(`sms:${rawPhone}?body=${waiverSms}`, '_blank');
+      }
+
       if (navigator.onLine) {
         await syncPendingRegistrations();
       } else {
@@ -1487,7 +1505,6 @@
 
       participants = participants.filter(p => p.id !== id);
       
-      // Also remove from offline queue if queued
       if (activeTournament) {
         let localRoster = JSON.parse(localStorage.getItem(`offline_roster_${activeTournament.id}`) || '[]');
         localRoster = localRoster.filter(p => p.id !== id);
