@@ -1441,5 +1441,14 @@
       };
     }
   </script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(() => console.log('Offline service worker ready.'))
+        .catch(err => console.warn('Worker registration failed:', err));
+    });
+  }
+</script>
+</body>
 </body>
 </html>
