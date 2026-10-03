@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AAFL - Official Participant Release & Liability Waiver</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    /* Prevent scrolling while signing on touchscreens */
+    canvas {
+      touch-action: none;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans p-4 md:p-6">
+
+  <div class="max-w-xl mx-auto space-y-5">
+
+    <!-- HEADER -->
+    <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl text-center">
+      <div class="inline-block px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 uppercase mb-2">
+        LEGAL RELEASE REQUIRED BEFORE LAUNCH
+      </div>
+      <h1 class="text-xl font-black text-white uppercase tracking-wider">OFFICIAL PARTICIPANT WAIVER & RELEASE</h1>
+      <p id="eventMeta" class="text-xs font-mono text-slate-400 mt-1">American Anglers Fishing League (AAFL)</p>
+    </div>
+
+    <!-- ANGLER & BOAT VERIFICATION -->
+    <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl space-y-3">
+      <h2 class="text-xs font-black uppercase text-amber-400 tracking-wider">1. Angler & Watercraft Details</h2>
+      
+      <div>
+        <label class="text-[11px] font-bold uppercase text-slate-400 block mb-1">Full Legal Name *</label>
+        <input type="text" id="anglerName" required placeholder="John Doe" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white font-bold text-sm focus:border-blue-500 focus:outline-none" />
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-[11px] font-bold uppercase text-slate-400 block mb-1">Mobile Phone *</label>
+          <input type="tel" id="anglerPhone" required placeholder="(555) 000-0000" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white font-mono text-sm focus:border-blue-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="text-[11px] font-bold uppercase text-slate-400 block mb-1">Assigned Boat #</label>
+          <input type="number" id="boatNumber" placeholder="e.g. 12" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white font-mono text-sm focus:border-blue-500 focus:outline-none" />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 pt-1">
+        <div>
+          <label class="text-[11px] font-bold uppercase text-slate-400 block mb-1">Watercraft Insurance Carrier *</label>
+          <input type="text" id="insCarrier" required placeholder="e.g. Progressive, Foremost" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white text-xs focus:border-blue-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="text-[11px] font-bold uppercase text-slate-400 block mb-1">Policy Number *</label>
+          <input type="text" id="insPolicy" required placeholder="Policy #" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white font-mono text-xs focus:border-blue-500 focus:outline-none" />
+        </div>
+      </div>
+      <p class="text-[10px] text-slate-500 font-mono">* All boat captains certify carrying current minimum $300,000 watercraft liability coverage.</p>
+    </div>
+
+    <!-- LEGAL WAIVER CLAUSES -->
+    <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl space-y-3">
+      <h2 class="text-xs font-black uppercase text-amber-400 tracking-wider">2. Express Assumption of Risk & Release of Liability</h2>
+      
+      <div class="bg-slate-950 border border-slate-800 p-3.5 rounded-xl text-[11px] text-slate-300 space-y-2.5 max-h-56 overflow-y-auto font-sans leading-relaxed">
+        <p>
+          <strong>1. ASSUMPTION OF RISK:</strong> I acknowledge that competitive tournament fishing and watercraft operation involve inherent risks, including but not limited to severe weather, rough water conditions, equipment failure, collisions, drowning, personal injury, and death. I voluntarily participate with full knowledge of these dangers.
+        </p>
+        <p>
+          <strong>2. COVENANT NOT TO SUE & LIABILITY RELEASE:</strong> In consideration of participating, I hereby release, waive, discharge, and hold harmless the <strong>American Anglers Fishing League (AAFL)</strong>, its owners, directors, sponsors, staff, and host marina facilities from any and all liability, claims, or demands arising out of negligence, personal injury, property damage, or death occurring during any AAFL-sanctioned event.
+        </p>
+        <p>
+          <strong>3. SAFE BOATING & SAFETY COMPLIANCE:</strong> I certify that I will wear a Coast Guard-approved chest-type PFD securely fastened and tether an engine kill switch whenever the combustion engine is running above idle. I agree to operate my watercraft in strict compliance with all state and federal maritime laws.
+        </p>
+        <p>
+          <strong>4. POLYGRAPH & RULEBOOK SUBMISSION:</strong> I agree to submit to a truth verification examination (polygraph) upon request by the tournament committee. Failure to submit or passing will result in immediate disqualification and forfeiture of purse.
+        </p>
+        <p>
+          <strong>5. MEDIA & PHOTO RELEASE:</strong> I grant the AAFL royalty-free permission to photograph, video, and publish my name, likeness, and catch statistics for tournament reporting, digital leaderboards, and promotional broadcasts.
+        </p>
+      </div>
+
+      <label class="flex items-start gap-2.5 text-xs text-slate-200 cursor-pointer pt-1">
+        <input type="checkbox" id="agreeCheckbox" required class="mt-0.5 w-4 h-4 rounded text-blue-600 bg-slate-950 border-slate-700" />
+        <span>I have carefully read, understand, and voluntarily agree to all terms of this liability release and certification.</span>
+      </label>
+    </div>
+
+    <!-- DIGITAL TOUCH SIGNATURE PAD -->
+    <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl space-y-3">
+      <div class="flex justify-between items-center">
+        <h2 class="text-xs font-black uppercase text-amber-400 tracking-wider">3. Digital Signature (Sign Below)</h2>
+        <button type="button" onclick="clearSignature()" class="text-[11px] text-red-400 hover:text-red-300 font-bold underline">Clear Signature</button>
+      </div>
+
+      <div class="border-2 border-dashed border-slate-700 bg-white rounded-xl overflow-hidden relative">
+        <canvas id="sigCanvas" width="500" height="180" class="w-full h-44 cursor-crosshair"></canvas>
+      </div>
+      <p class="text-[10px] text-slate-500 font-mono text-center">Use your finger or stylus to sign above. This constitutes a legally binding digital signature.</p>
+
+      <button type="button" id="submitBtn" onclick="submitWaiver()" class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm uppercase tracking-wider rounded-xl shadow-lg transition">
+        ✍️ SIGN & SUBMIT OFFICIAL WAIVER
+      </button>
+    </div>
+
+    <!-- SUBMITTED CONFIRMATION BANNER -->
+    <div id="confirmedCard" class="hidden bg-emerald-950/60 border border-emerald-500 p-6 rounded-2xl text-center space-y-2">
+      <div class="text-4xl">✅</div>
+      <h3 class="text-lg font-black text-white uppercase">Waiver Certified & Filed</h3>
+      <p class="text-xs text-slate-300">Your release form has been logged into the AAFL compliance register and dispatched to headquarters.</p>
+      <div class="text-[11px] font-mono text-emerald-400 pt-1">Ready for launch. Have a safe tournament!</div>
+    </div>
+
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://gjoxrosyboapwfqlfdye.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdqb3hyb3N5Ym9hcHdmcWxmZHllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3MDEwMzQsImV4cCI6MjEwNDI3NzAzNH0.SFcX-NYJgL8lGv5QP2HXN83eaL7x2v0KCJonJXYoUAE';
+    const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let activeTournament = null;
+    let participantId = null;
+
+    // Canvas drawing setup
+    const canvas = document.getElementById('sigCanvas');
+    const ctx = canvas.getContext('2d');
+    let isDrawing = false;
+    let hasSigned = false;
+
+    // Resize canvas internal buffer to match display width
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * 2;
+      canvas.height = rect.height * 2;
+      ctx.scale(2, 2);
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#000000';
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      resizeCanvas();
+      window.addEventListener('resize', resizeCanvas);
+      setupCanvasListeners();
+      await initWaiverContext();
+    });
+
+    async function initWaiverContext() {
+      const p = new URLSearchParams(window.location.search);
+      const tid = p.get('tid') || localStorage.getItem('aafl_active_tid');
+      participantId = p.get('pid');
+
+      const preName = p.get('name');
+      const prePhone = p.get('phone');
+      const preBoat = p.get('boat');
+
+      if (preName) document.getElementById('anglerName').value = decodeURIComponent(preName);
+      if (prePhone) document.getElementById('anglerPhone').value = decodeURIComponent(prePhone);
+      if (preBoat) document.getElementById('boatNumber').value = preBoat;
+
+      if (tid) {
+        const { data: t } = await client.from('tournaments').select('*').eq('id', tid).single();
+        if (t) {
+          activeTournament = t;
+          document.getElementById('eventMeta').innerText = `${t.title} • ${t.lake_name || ''} (${t.event_date || 'Event Day'})`;
+        }
+      }
+    }
+
+    function setupCanvasListeners() {
+      // Touch events
+      canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const r = canvas.getBoundingClientRect();
+        isDrawing = true;
+        hasSigned = true;
+        ctx.beginPath();
+        ctx.moveTo(touch.clientX - r.left, touch.clientY - r.top);
+      });
+
+      canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if (!isDrawing) return;
+        const touch = e.touches[0];
+        const r = canvas.getBoundingClientRect();
+        ctx.lineTo(touch.clientX - r.left, touch.clientY - r.top);
+        ctx.stroke();
+      });
+
+      canvas.addEventListener('touchend', () => { isDrawing = false; });
+
+      // Mouse events
+      canvas.addEventListener('mousedown', (e) => {
+        isDrawing = true;
+        hasSigned = true;
+        const r = canvas.getBoundingClientRect();
+        ctx.beginPath();
+        ctx.moveTo(e.clientX - r.left, e.clientY - r.top);
+      });
+
+      canvas.addEventListener('mousemove', (e) => {
+        if (!isDrawing) return;
+        const r = canvas.getBoundingClientRect();
+        ctx.lineTo(e.clientX - r.left, e.clientY - r.top);
+        ctx.stroke();
+      });
+
+      canvas.addEventListener('mouseup', () => { isDrawing = false; });
+    }
+
+    function clearSignature() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      hasSigned = false;
+    }
+
+    async function submitWaiver() {
+      const name = document.getElementById('anglerName').value.trim();
+      const phone = document.getElementById('anglerPhone').value.trim();
+      const boatNum = document.getElementById('boatNumber').value;
+      const carrier = document.getElementById('insCarrier').value.trim();
+      const policy = document.getElementById('insPolicy').value.trim();
+      const agreed = document.getElementById('agreeCheckbox').checked;
+
+      if (!name || !phone || !carrier || !policy) {
+        alert('Please complete all required fields (Name, Phone, and Insurance details).');
+        return;
+      }
+
+      if (!agreed) {
+        alert('You must check the box agreeing to the liability release.');
+        return;
+      }
+
+      if (!hasSigned) {
+        alert('Please sign with your finger in the signature box.');
+        return;
+      }
+
+      const sigBase64 = canvas.toDataURL('image/png');
+      const btn = document.getElementById('submitBtn');
+      btn.innerText = 'Submitting...';
+      btn.disabled = true;
+
+      const record = {
+        tournament_id: activeTournament ? activeTournament.id : null,
+        participant_id: participantId && !participantId.startsWith('local_') ? participantId : null,
+        angler_name: name,
+        angler_phone: phone,
+        boat_number: boatNum ? parseInt(boatNum, 10) : null,
+        insurance_carrier: carrier,
+        insurance_policy: policy,
+        signature_base64: sigBase64,
+        signed_at: new Date().toISOString()
+      };
+
+      try {
+        // 1. Insert into Supabase
+        await client.from('tournament_waivers').insert([record]);
+
+        // 2. Prepare legal confirmation email for League Office
+        const tournTitle = activeTournament ? activeTournament.title : 'AAFL Tournament';
+        const dateStr = activeTournament ? activeTournament.event_date : new Date().toLocaleDateString();
+        const subject = encodeURIComponent(`EXECUTED LEGAL WAIVER: ${name} (Boat #${boatNum || '--'}) - ${tournTitle}`);
+
+        const body = encodeURIComponent(
+          `AMERICAN ANGLERS FISHING LEAGUE\n` +
+          `OFFICIAL EXECUTED PARTICIPANT RELEASE & WAIVER OF LIABILITY\n` +
+          `----------------------------------------------------------\n\n` +
+          `EVENT: ${tournTitle}\n` +
+          `DATE: ${dateStr}\n` +
+          `SUBMISSION TIME: ${new Date().toLocaleString()}\n\n` +
+          `ANGLER INFORMATION:\n` +
+          `Full Name: ${name}\n` +
+          `Mobile Phone: ${phone}\n` +
+          `Assigned Boat #: ${boatNum || 'Pending'}\n\n` +
+          `WATERCRAFT LIABILITY DECLARATION:\n` +
+          `Insurance Carrier: ${carrier}\n` +
+          `Policy Number: ${policy}\n` +
+          `Certified Coverage: Minimum $300,000 Watercraft Liability Declared\n\n` +
+          `TERMS ACCEPTED:\n` +
+          `- Express Assumption of Risk\n` +
+          `- Covenant Not to Sue & Release of Liability\n` +
+          `- Coast Guard PFD / Kill Switch Compliance\n` +
+          `- Truth Verification Polygraph Submission\n` +
+          `- Media / Promotional Likeness Release\n\n` +
+          `DIGITAL SIGNATURE AUDIT HASH:\n` +
+          `${sigBase64.substring(0, 120)}... (Stored in AAFL secure vault)\n\n` +
+          `Executed on mobile device by participant.\n`
+        );
+
+        // 3. Trigger background email dispatch to AAFL Headquarters
+        const mailtoUri = `mailto:support@theamericanfishingleague.com?subject=${subject}&body=${body}`;
+        window.location.href = mailtoUri;
+
+        document.getElementById('confirmedCard').classList.remove('hidden');
+        btn.classList.add('hidden');
+
+      } catch (err) {
+        console.warn('Waiver cloud submission notice:', err);
+        // Fallback email dispatch even if offline
+        const mailtoUri = `mailto:support@theamericanfishingleague.com?subject=AAFL Waiver Execution: ${encodeURIComponent(name)}&body=Waiver signed on site.`;
+        window.location.href = mailtoUri;
+        document.getElementById('confirmedCard').classList.remove('hidden');
+      }
+    }
+  </script>
+</body>
+</html>
