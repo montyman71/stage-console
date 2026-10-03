@@ -49,6 +49,9 @@
         <a href="members.html" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-xs font-black text-white transition flex items-center gap-1.5 shadow-lg">
           <span>🪪 Member Registry</span>
         </a>
+        <a href="waiver-print.html" target="_blank" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold text-slate-300 transition border border-slate-700 flex items-center gap-1.5 shadow-lg">
+          <span>📄 Print Paper Waiver</span>
+        </a>
         <button onclick="openNewTournamentModal()" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-black text-white transition flex items-center gap-1.5 shadow-lg">
           <span>+ Add To Schedule</span>
         </button>
@@ -316,7 +319,7 @@
         </div>
 
         <div class="border-t border-slate-800 pt-3 text-[11px] text-slate-500 flex justify-between items-center">
-          <span>Click 💬 to send flight SMS</span>
+          <span>Click 💬 for SMS or ✍️ for Waiver</span>
           <button onclick="loadData()" class="text-blue-400 hover:underline font-bold">↻ Refresh</button>
         </div>
       </div>
@@ -1204,7 +1207,7 @@
         const date = document.getElementById('dateInput').value || 'Tournament Day';
         const rawPhone = p.phone ? p.phone.replace(/[^0-9]/g, '') : '';
         
-        // Waiver URL link for this participant
+        // Dynamic Digital Waiver link
         const waiverUrl = `${window.location.origin}${window.location.pathname.replace('register.html', 'waiver.html')}?tid=${activeTournament ? activeTournament.id : ''}&pid=${p.id}&name=${encodeURIComponent(p.display_name)}&phone=${encodeURIComponent(p.phone || '')}&boat=${boatNum}`;
 
         const smsBody = encodeURIComponent(
@@ -1239,7 +1242,7 @@
           </div>
 
           <div class="flex items-center gap-1.5">
-            <a href="${waiverUrl}" target="_blank" title="Open Legal Waiver" class="px-2 py-1.5 bg-amber-500/20 border border-amber-500/40 text-amber-300 rounded-lg text-xs font-bold hover:bg-amber-500 hover:text-black transition">
+            <a href="${waiverUrl}" target="_blank" title="Open Legal Digital Waiver" class="px-2 py-1.5 bg-amber-500/20 border border-amber-500/40 text-amber-300 rounded-lg text-xs font-bold hover:bg-amber-500 hover:text-black transition">
               ✍️ Waiver
             </a>
             <a href="${smsLink}" title="Send SMS Confirmation & Waiver" class="px-2 py-1.5 bg-emerald-600/20 border border-emerald-500/40 text-emerald-400 rounded-lg text-xs font-bold hover:bg-emerald-600 hover:text-white transition flex items-center gap-1">
@@ -1320,7 +1323,7 @@
         created_at: new Date().toISOString()
       };
 
-      // Save to offline storage immediately
+      // Save directly to offline storage queue immediately
       let localRoster = JSON.parse(localStorage.getItem(`offline_roster_${activeTournament.id}`) || '[]');
       localRoster.push(newParticipant);
       localStorage.setItem(`offline_roster_${activeTournament.id}`, JSON.stringify(localRoster));
@@ -1335,7 +1338,7 @@
       document.getElementById('partnerName').value = '';
       document.getElementById('captainPhone').value = '';
 
-      // Build and dispatch waiver SMS to boater
+      // Auto-trigger waiver SMS to boater
       if (phone) {
         const rawPhone = phone.replace(/[^0-9]/g, '');
         const waiverUrl = `${window.location.origin}${window.location.pathname.replace('register.html', 'waiver.html')}?tid=${activeTournament.id}&pid=${newParticipant.id}&name=${encodeURIComponent(capName)}&phone=${encodeURIComponent(phone)}&boat=${boatNum}`;
