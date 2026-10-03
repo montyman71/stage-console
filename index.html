@@ -8,7 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
-    /* ================= STAR TSP100III THERMAL PRINT STYLING (80mm) ================= */
+    /* STAR TSP100III THERMAL PRINT STYLING (80mm) */
     @media print {
       body * {
         visibility: hidden !important;
@@ -21,7 +21,7 @@
         position: absolute;
         left: 0;
         top: 0;
-        width: 72mm; /* Exact printable width of standard 80mm roll */
+        width: 72mm;
         margin: 0;
         padding: 4mm 2mm;
         font-family: 'Courier New', Courier, monospace;
@@ -58,16 +58,17 @@
     <div class="flex flex-wrap justify-between items-center bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-xl gap-4">
       <div>
         <div class="flex items-center gap-3">
-          <span id="stageSyncDot" class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span id="stageSyncDot" class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" title="Connected"></span>
           <div>
             <div class="flex items-center gap-2">
               <span id="stageTrailBadge" class="text-[10px] font-mono font-bold px-2 py-0.5 rounded uppercase bg-blue-500/20 text-blue-300 border border-blue-500/40">AAFL TRAIL</span>
               <span id="stageDivisionBadge" class="hidden text-[10px] font-mono font-bold px-2 py-0.5 rounded uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40">DIVISION</span>
+              <span id="offlinePendingBadge" class="hidden text-[10px] font-mono font-bold px-2 py-0.5 rounded uppercase bg-amber-500/20 text-amber-400 border border-amber-500/40">OFFLINE QUEUE: <span id="offlineQueueCount">0</span></span>
             </div>
             <h1 id="stageTitle" class="text-xl font-black text-white uppercase tracking-wider mt-0.5">AAFL OFFICIAL STAGE SCALE</h1>
           </div>
         </div>
-        <p id="stageMeta" class="text-xs font-mono text-slate-400 mt-1">Live Stage Weigh-In Desk • Star TSP100III Enabled</p>
+        <p id="stageMeta" class="text-xs font-mono text-slate-400 mt-1">Live Stage Weigh-In Desk • Offline Enabled</p>
       </div>
 
       <!-- NAVIGATION & SWITCHER -->
@@ -88,7 +89,7 @@
           Results & Points
         </a>
         <a id="linkAuditStage" href="audit.html" class="px-3.5 py-2 bg-rose-700 hover:bg-rose-600 rounded-lg text-xs font-black text-white transition flex items-center gap-1 shadow-lg">
-          <span>🏁 End Event & Audit</span>
+          <span>🏁 End Event</span>
         </a>
       </div>
     </div>
@@ -184,7 +185,7 @@
                 onclick="lockAndPublishWeight()" 
                 class="px-6 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm uppercase tracking-wider rounded-xl shadow-2xl shadow-emerald-900/50 transition flex items-center gap-2"
               >
-                <span>🔒 CERTIFY & PUBLISH</span>
+                <span>🔒 CERTIFY & LOCK</span>
               </button>
             </div>
           </div>
@@ -249,7 +250,7 @@
     </div>
   </div>
 
-  <!-- ================= STAR TSP100III HIDDEN THERMAL RECEIPT SLIP ================= -->
+  <!-- STAR TSP100III THERMAL RECEIPT SLIP -->
   <div id="weighTicket" class="hidden">
     <div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 6px; margin-bottom: 8px;">
       <div style="font-weight: 900; font-size: 14pt; letter-spacing: 1px;">AAFL STAGE SCALE</div>
@@ -331,6 +332,7 @@
       await loadTournaments();
       await loadStageData();
       setupSubscriptions();
+      checkPendingSyncStatus();
     }
 
     function getTargetTournamentId() {
@@ -339,12 +341,23 @@
     }
 
     async function loadTournaments() {
-      const { data } = await client
-        .from('tournaments')
-        .select('*')
-        .order('event_date', { ascending: false });
+      if (navigator.onLine) {
+        try {
+          const { data } = await client
+            .from('tournaments')
+            .select('*')
+            .order('event_date', { ascending: false });
+          if (data && data.length > 0) {
+            allTournaments = data;
+            localStorage.setItem('cached_tournaments', JSON.stringify(data));
+          }
+        } catch (e) {
+          allTournaments = JSON.parse(localStorage.getItem('cached_tournaments') || '[]');
+        }
+      } else {
+        allTournaments = JSON.parse(localStorage.getItem('cached_tournaments') || '[]');
+      }
 
-      allTournaments = data || [];
       const sel = document.getElementById('stageTournamentSelect');
       sel.innerHTML = '';
 
@@ -386,12 +399,10 @@
       if (!currentTournament) return;
       localStorage.setItem('aafl_active_tid', currentTournament.id);
 
-      // Update Navigation Links
       document.getElementById('linkRegister').href = `register.html?tid=${currentTournament.id}`;
       document.getElementById('linkResults').href = `results.html?tid=${currentTournament.id}`;
       document.getElementById('linkAuditStage').href = `audit.html?tid=${currentTournament.id}`;
 
-      // Update UI Headings
       document.getElementById('stageTitle').innerText = currentTournament.title.toUpperCase();
       document.getElementById('stageMeta').innerText = `Venue: ${currentTournament.lake_name || 'Tournament Water'} • Date: ${currentTournament.event_date || 'Stage Day'}`;
 
@@ -406,25 +417,58 @@
         divBadge.classList.add('hidden');
       }
 
-      // Fetch Participants
-      const { data: pData } = await client
-        .from('tournament_participants')
-        .select('*')
-        .eq('tournament_id', currentTournament.id)
-        .order('boat_number', { ascending: true });
+      // Fetch participants (online + offline merged)
+      let fetchedParticipants = [];
+      if (navigator.onLine) {
+        try {
+          const { data } = await client
+            .from('tournament_participants')
+            .select('*')
+            .eq('tournament_id', currentTournament.id)
+            .order('boat_number', { ascending: true });
+          fetchedParticipants = data || [];
+          localStorage.setItem(`cached_participants_${currentTournament.id}`, JSON.stringify(fetchedParticipants));
+        } catch (e) {
+          fetchedParticipants = JSON.parse(localStorage.getItem(`cached_participants_${currentTournament.id}`) || '[]');
+        }
+      } else {
+        fetchedParticipants = JSON.parse(localStorage.getItem(`cached_participants_${currentTournament.id}`) || '[]');
+      }
 
-      participants = pData || [];
+      // Merge queued offline participants
+      const offlineParticipants = JSON.parse(localStorage.getItem(`offline_roster_${currentTournament.id}`) || '[]');
+      const partMap = new Map();
+      fetchedParticipants.forEach(p => partMap.set(p.id, p));
+      offlineParticipants.forEach(p => partMap.set(p.id, p));
+      participants = Array.from(partMap.values());
 
-      // Fetch Locked Weights
-      const { data: wData } = await client
-        .from('official_stage_weights')
-        .select('*')
-        .eq('tournament_id', currentTournament.id);
+      // Fetch stage weights (online + offline merged)
+      let fetchedWeights = [];
+      if (navigator.onLine) {
+        try {
+          const { data } = await client
+            .from('official_stage_weights')
+            .select('*')
+            .eq('tournament_id', currentTournament.id);
+          fetchedWeights = data || [];
+          localStorage.setItem(`cached_weights_${currentTournament.id}`, JSON.stringify(fetchedWeights));
+        } catch (e) {
+          fetchedWeights = JSON.parse(localStorage.getItem(`cached_weights_${currentTournament.id}`) || '[]');
+        }
+      } else {
+        fetchedWeights = JSON.parse(localStorage.getItem(`cached_weights_${currentTournament.id}`) || '[]');
+      }
 
-      stageWeights = wData || [];
+      // Merge queued offline weights
+      const offlineWeights = JSON.parse(localStorage.getItem(`offline_weights_${currentTournament.id}`) || '[]');
+      const weightMap = new Map();
+      fetchedWeights.forEach(w => weightMap.set(w.participant_id, w));
+      offlineWeights.forEach(w => weightMap.set(w.participant_id, w));
+      stageWeights = Array.from(weightMap.values());
 
       renderQueue(participants);
       computeMetrics();
+      checkPendingSyncStatus();
     }
 
     function renderQueue(list) {
@@ -443,10 +487,9 @@
       list.forEach(p => {
         const weightRecord = stageWeights.find(w => w.participant_id === p.id);
         const isWeighed = !!weightRecord;
-
-        const card = document.createElement('div');
         const isActive = activeParticipant && activeParticipant.id === p.id;
 
+        const card = document.createElement('div');
         card.className = `p-3 rounded-xl border cursor-pointer transition flex justify-between items-center ${
           isActive 
             ? 'bg-blue-950/60 border-blue-500 ring-2 ring-blue-500/30' 
@@ -473,7 +516,7 @@
           <div>
             ${isWeighed ? `
               <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                ${parseFloat(weightRecord.net_weight || weightRecord.final_net_weight_lbs || 0).toFixed(2)} lbs
+                ${parseFloat(weightRecord.net_weight || 0).toFixed(2)} lbs
               </span>
             ` : `
               <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-400">
@@ -487,7 +530,7 @@
     }
 
     function extractBoatNum(name) {
-      const match = name.match(/Boat #(\d+)/);
+      const match = (name || '').match(/Boat #(\d+)/);
       return match ? match[1] : '--';
     }
 
@@ -509,13 +552,11 @@
       document.getElementById('activeAnglerName').innerText = participant.display_name;
       document.getElementById('activeBoatBadge').innerText = participant.boat_number ? `#${participant.boat_number}` : '#--';
 
-      // Check if existing record exists
       const existing = stageWeights.find(w => w.participant_id === participant.id);
       if (existing) {
-        document.getElementById('inputGross').value = parseFloat(existing.gross_weight || existing.total_gross_lbs || 0).toFixed(2);
-        document.getElementById('inputBigBass').value = parseFloat(existing.big_bass_weight || existing.tournament_big_bass_lbs || 0).toFixed(2);
-        
-        const pen = parseFloat(existing.dead_penalty || existing.total_dead_penalty_lbs || 0);
+        document.getElementById('inputGross').value = parseFloat(existing.gross_weight || 0).toFixed(2);
+        document.getElementById('inputBigBass').value = parseFloat(existing.big_bass_weight || 0).toFixed(2);
+        const pen = parseFloat(existing.dead_penalty || 0);
         deadFish = Math.round(pen / 0.25);
       } else {
         document.getElementById('inputGross').value = '';
@@ -554,61 +595,59 @@
       const net = Math.max(0, gross - penalty);
       const bigBass = parseFloat(document.getElementById('inputBigBass').value) || 0;
 
-      const btn = document.getElementById('btnLockWeight');
-      btn.innerText = 'Locking...';
-      btn.disabled = true;
+      const payload = {
+        tournament_id: currentTournament.id,
+        participant_id: activeParticipant.id,
+        gross_weight: gross,
+        dead_penalty: penalty,
+        net_weight: net,
+        big_bass_weight: bigBass,
+        is_locked: true,
+        updated_at: new Date().toISOString()
+      };
 
-      try {
-        const payload = {
-          tournament_id: currentTournament.id,
-          participant_id: activeParticipant.id,
-          gross_weight: gross,
-          dead_penalty: penalty,
-          net_weight: net,
-          big_bass_weight: bigBass,
-          is_locked: true,
-          updated_at: new Date().toISOString()
-        };
-
-        const { data, error } = await client
-          .from('official_stage_weights')
-          .upsert([payload], { onConflict: 'tournament_id,participant_id' })
-          .select();
-
-        btn.innerText = '🔒 CERTIFY & PUBLISH';
-        btn.disabled = false;
-
-        if (error) {
-          alert('Save Error: ' + error.message);
-          return;
-        }
-
-        // Broadcast to Jumbotron
-        broadcast.postMessage({
-          type: 'STAGE_WEIGHT_LOCKED',
-          tournamentId: currentTournament.id,
-          angler: activeParticipant,
-          weight: payload
-        });
-
-        // Trigger Star TSP100III Weigh Ticket Print Automatically
-        printWeighTicket({
-          participant_id: activeParticipant.id,
-          display_name: activeParticipant.display_name,
-          boat_number: activeParticipant.boat_number,
-          gross_weight: gross,
-          dead_penalty: penalty,
-          net_weight: net,
-          big_bass_weight: bigBass
-        });
-
-        await loadStageData();
-
-      } catch (err) {
-        btn.innerText = '🔒 CERTIFY & PUBLISH';
-        btn.disabled = false;
-        alert('Error: ' + err.message);
+      // 1. Save directly to offline queue storage
+      let localWeights = JSON.parse(localStorage.getItem(`offline_weights_${currentTournament.id}`) || '[]');
+      const existingIdx = localWeights.findIndex(w => w.participant_id === activeParticipant.id);
+      if (existingIdx !== -1) {
+        localWeights[existingIdx] = payload;
+      } else {
+        localWeights.push(payload);
       }
+      localStorage.setItem(`offline_weights_${currentTournament.id}`, JSON.stringify(localWeights));
+
+      // 2. Print ticket instantly
+      printWeighTicket({
+        participant_id: activeParticipant.id,
+        display_name: activeParticipant.display_name,
+        boat_number: activeParticipant.boat_number,
+        gross_weight: gross,
+        dead_penalty: penalty,
+        net_weight: net,
+        big_bass_weight: bigBass
+      });
+
+      // 3. Update memory model for local leaderboard calculations
+      const memIdx = stageWeights.findIndex(w => w.participant_id === activeParticipant.id);
+      if (memIdx !== -1) stageWeights[memIdx] = payload;
+      else stageWeights.push(payload);
+
+      renderQueue(participants);
+      computeMetrics();
+
+      // 4. Try cloud sync if online
+      if (navigator.onLine) {
+        await syncPendingWeights();
+      } else {
+        checkPendingSyncStatus();
+      }
+
+      broadcast.postMessage({
+        type: 'STAGE_WEIGHT_LOCKED',
+        tournamentId: currentTournament.id,
+        angler: activeParticipant,
+        weight: payload
+      });
     }
 
     function printCurrentTicket() {
@@ -632,16 +671,12 @@
       });
     }
 
-    /**
-     * STAR TSP100III THERMAL RECEIPT PRINT ENGINE
-     */
-    async function printWeighTicket(record) {
-      // 1. Calculate live position from existing stage weights
+    function printWeighTicket(record) {
       let currentRank = '1st PLACE';
       try {
         const sorted = [...stageWeights].sort((a, b) => {
-          const netA = parseFloat(a.net_weight || a.final_net_weight_lbs || 0);
-          const netB = parseFloat(b.net_weight || b.final_net_weight_lbs || 0);
+          const netA = parseFloat(a.net_weight || 0);
+          const netB = parseFloat(b.net_weight || 0);
           return netB - netA;
         });
 
@@ -649,10 +684,9 @@
         const place = (idx !== -1) ? idx + 1 : sorted.length + 1;
         currentRank = (place === 1) ? '1st PLACE' : (place === 2) ? '2nd PLACE' : (place === 3) ? '3rd PLACE' : `${place}th PLACE`;
       } catch (e) {
-        console.warn('Rank lookup fallback:', e);
+        console.warn('Rank calculation error:', e);
       }
 
-      // 2. Populate the thermal ticket
       const now = new Date();
       document.getElementById('ticketTrail').innerText = currentTournament.trail_series || 'AAFL TOURNAMENT TRAIL';
       document.getElementById('ticketTournTitle').innerText = currentTournament.title || 'AAFL TOURNAMENT';
@@ -672,12 +706,9 @@
 
       document.getElementById('ticketRank').innerText = currentRank;
 
-      // 3. Trigger printing on Star TSP100III
       const ticket = document.getElementById('weighTicket');
       ticket.classList.remove('hidden');
-
       window.print();
-
       setTimeout(() => {
         ticket.classList.add('hidden');
       }, 1000);
@@ -694,8 +725,8 @@
       let totalPoundage = 0;
 
       stageWeights.forEach(w => {
-        const net = parseFloat(w.net_weight || w.final_net_weight_lbs || 0);
-        const bb = parseFloat(w.big_bass_weight || w.tournament_big_bass_lbs || 0);
+        const net = parseFloat(w.net_weight || 0);
+        const bb = parseFloat(w.big_bass_weight || 0);
 
         totalPoundage += net;
         if (net > leaderNet) leaderNet = net;
@@ -706,6 +737,62 @@
       document.getElementById('metricBigBass').innerText = `${highestBB.toFixed(2)} lbs`;
       document.getElementById('metricTotalPoundage').innerText = `${totalPoundage.toFixed(2)} lbs`;
     }
+
+    async function syncPendingWeights() {
+      if (!currentTournament) return;
+      const localWeights = JSON.parse(localStorage.getItem(`offline_weights_${currentTournament.id}`) || '[]');
+      if (localWeights.length === 0) {
+        checkPendingSyncStatus();
+        return;
+      }
+
+      // Check if participant has an unresolved offline ID
+      const safePayload = localWeights.filter(w => !w.participant_id.toString().startsWith('local_'));
+
+      if (safePayload.length > 0) {
+        const { error } = await client
+          .from('official_stage_weights')
+          .upsert(safePayload, { onConflict: 'tournament_id,participant_id' });
+
+        if (!error) {
+          localStorage.removeItem(`offline_weights_${currentTournament.id}`);
+          console.log('Queued weights synced to Supabase.');
+        }
+      }
+      checkPendingSyncStatus();
+    }
+
+    function checkPendingSyncStatus() {
+      if (!currentTournament) return;
+      const localWeights = JSON.parse(localStorage.getItem(`offline_weights_${currentTournament.id}`) || '[]');
+      const dot = document.getElementById('stageSyncDot');
+      const badge = document.getElementById('offlinePendingBadge');
+      const countSpan = document.getElementById('offlineQueueCount');
+
+      if (!navigator.onLine) {
+        dot.className = 'w-3 h-3 rounded-full bg-amber-500';
+        dot.title = 'Offline Mode';
+      } else {
+        dot.className = 'w-3 h-3 rounded-full bg-emerald-500 animate-pulse';
+        dot.title = 'Online & Connected';
+      }
+
+      if (localWeights.length > 0) {
+        badge.classList.remove('hidden');
+        countSpan.innerText = localWeights.length;
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    window.addEventListener('online', () => {
+      console.log('Online signal detected. Syncing queue...');
+      syncPendingWeights();
+    });
+
+    window.addEventListener('offline', () => {
+      checkPendingSyncStatus();
+    });
 
     function setupSubscriptions() {
       client
@@ -718,14 +805,17 @@
         })
         .subscribe();
     }
+  </script>
+
+  <!-- SERVICE WORKER REGISTRATION -->
   <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .then(() => console.log('Offline service worker ready.'))
-        .catch(err => console.warn('Worker registration failed:', err));
-    });
-  }
-</script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(() => console.log('Offline service worker registered.'))
+          .catch(err => console.warn('Service worker registration failed:', err));
+      });
+    }
+  </script>
 </body>
 </html>
