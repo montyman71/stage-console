@@ -28,11 +28,12 @@
     <div class="flex flex-wrap justify-between items-center bg-slate-900 border border-slate-800 p-4 rounded-xl shadow-xl gap-4">
       <div>
         <div class="flex items-center gap-3">
-          <span id="syncDot" class="w-3 h-3 rounded-full bg-amber-500 animate-pulse"></span>
+          <span id="syncDot" class="w-3 h-3 rounded-full bg-amber-500 animate-pulse" title="Status"></span>
           <div>
             <div class="flex items-center gap-2">
               <span id="headerTrailBadge" class="hidden text-[10px] font-mono font-bold px-2 py-0.5 rounded uppercase">TRAIL</span>
               <span id="headerDivisionBadge" class="hidden text-[10px] font-mono font-bold bg-slate-800 text-slate-300 px-2 py-0.5 rounded uppercase">DIV</span>
+              <span id="regOfflineQueueBadge" class="hidden text-[10px] font-mono font-bold px-2 py-0.5 rounded uppercase bg-amber-500/20 text-amber-400 border border-amber-500/40">OFFLINE QUEUE: <span id="regOfflineQueueCount">0</span></span>
             </div>
             <h1 id="tournamentHeading" class="text-xl font-black text-white uppercase tracking-wider mt-0.5">SYNCING TOURNAMENT...</h1>
           </div>
@@ -183,7 +184,7 @@
     <!-- MAIN INTERACTIVE DECK -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-      <!-- COLUMN 1: REGISTRATION (AUTO-COMPLETE SEARCH + BOAT ASSIGNMENT) -->
+      <!-- COLUMN 1: REGISTRATION -->
       <div class="bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-xl flex flex-col justify-between">
         <div>
           <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-2">
@@ -200,7 +201,6 @@
           </div>
 
           <form id="regForm" class="space-y-4">
-            <!-- CAPTAIN SEARCH & AUTO-FILL FROM MEMBER REGISTRY -->
             <div class="relative">
               <div class="flex justify-between items-center mb-1">
                 <label class="text-xs font-bold uppercase text-slate-400">Captain / Boater Name</label>
@@ -215,7 +215,6 @@
                 placeholder="Type name or 2027-XXXXX to search..." 
                 class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" 
               />
-              <!-- FLOATING AUTO-COMPLETE RESULTS -->
               <div id="memberSearchResults" class="hidden absolute top-full left-0 right-0 z-30 bg-slate-900 border border-slate-700 rounded-lg shadow-2xl mt-1 max-h-48 overflow-y-auto"></div>
             </div>
 
@@ -229,7 +228,6 @@
               <input type="tel" id="captainPhone" placeholder="(555) 000-0000" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm font-mono focus:border-blue-500 focus:outline-none" />
             </div>
 
-            <!-- BOAT NUMBER ROW (AUTO SEQUENTIAL) -->
             <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg">
               <div class="flex justify-between items-center mb-1">
                 <div class="flex items-center gap-1.5">
@@ -334,8 +332,6 @@
         <button onclick="closeNewTournamentModal()" class="text-slate-500 hover:text-white font-bold">✕</button>
       </div>
       <form id="newTournForm" onsubmit="createTournament(event)" class="space-y-3">
-        
-        <!-- TRAIL SERIES DROPDOWN -->
         <div>
           <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Tournament Trail / Series</label>
           <select id="newTournTrail" onchange="toggleDivisionVisibility()" class="w-full p-2.5 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm font-bold focus:border-blue-500 focus:outline-none">
@@ -345,18 +341,14 @@
           </select>
         </div>
 
-        <!-- BCT DIVISION DYNAMIC SECTION -->
         <div id="divisionContainer" class="hidden bg-slate-950/80 border border-amber-500/30 p-3 rounded-lg space-y-2">
           <div class="flex justify-between items-center">
             <label class="text-xs font-bold uppercase text-amber-400">Blue Collar Trail (BCT) Division</label>
             <span class="text-[10px] text-slate-400">Select or add new</span>
           </div>
 
-          <select id="newTournDivision" onchange="handleDivisionSelectChange(this.value)" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white text-sm font-bold focus:border-amber-500 focus:outline-none">
-            <!-- Dynamically populated -->
-          </select>
+          <select id="newTournDivision" onchange="handleDivisionSelectChange(this.value)" class="w-full p-2 bg-slate-900 border border-slate-700 rounded text-white text-sm font-bold focus:border-amber-500 focus:outline-none"></select>
 
-          <!-- Input to add custom new division if selected -->
           <div id="customDivisionInputBox" class="hidden pt-1">
             <label class="text-[11px] font-bold text-slate-300 block mb-1">Type New Division Name:</label>
             <input type="text" id="customDivisionName" placeholder="e.g. Kissimmee Chain, St. Johns River..." class="w-full p-2 bg-slate-900 border border-amber-500/50 rounded text-white text-xs font-bold focus:outline-none focus:border-amber-400" />
@@ -401,11 +393,9 @@
     let allTournaments = [];
     let registeredMembersCache = [];
 
-    // DEFAULT BCT DIVISIONS
     const DEFAULT_DIVISIONS = ['Toho', 'Harris Chain', 'N. Florida'];
     let bctDivisions = JSON.parse(localStorage.getItem('aafl_bct_divisions')) || DEFAULT_DIVISIONS;
 
-    // STANDARD OPEN TOURNAMENT SCALE PRESETS
     const SCALE_PRESETS = {
       1: [1.00],
       2: [0.65, 0.35],
@@ -416,7 +406,6 @@
       10: [0.30, 0.18, 0.12, 0.09, 0.08, 0.07, 0.06, 0.04, 0.03, 0.03]
     };
 
-    // BCT 1-IN-6 FIXED PAYOUT DISTRIBUTION PRESETS (SUM = 100%)
     const BCT_1_IN_6_PRESETS = {
       1: [1.00],
       2: [0.65, 0.35],
@@ -448,17 +437,15 @@
       return BCT_1_IN_6_PRESETS[places] || BCT_1_IN_6_PRESETS[10];
     }
 
-    // WEEKEND WARRIOR TIERED BIG BASS: $250 per 25 boats, capped at $1,000
     function getWeekendWarriorBigBass(boats) {
       if (boats <= 0) return 0;
       const tier = Math.min(4, Math.floor((boats - 1) / 25) + 1);
       return Math.min(1000, tier * 250);
     }
 
-    // WEEKEND WARRIOR TOP-20% PAYOUT CURVE
     function computeWeekendWarriorPayouts(totalBoats) {
       if (totalBoats <= 0) return [];
-      const netPurse = totalBoats * 350.0 * 0.80; // 80% payback ($280/boat)
+      const netPurse = totalBoats * 350.0 * 0.80;
       const placesPaid = Math.max(1, Math.round(totalBoats * 0.20));
 
       if (placesPaid === 1) return [netPurse];
@@ -467,9 +454,8 @@
         return [first, netPurse - first];
       }
 
-      // 1st place: $100 per boat ($2,500 @ 25, $5,000 @ 50, $7,500 @ 75, $10,000 @ 100)
       const firstPlace = totalBoats * 100.0;
-      const lastPlace = 350.0; // Entry fee back guarantee
+      const lastPlace = 350.0;
       const nMid = placesPaid - 2;
       const remainingPurse = netPurse - firstPlace - lastPlace;
       const surplus = remainingPurse - (nMid * 350.0);
@@ -482,10 +468,9 @@
 
       let midPayouts = decayWeights.map(w => {
         const amount = 350.0 + (surplus * (w / weightSum));
-        return Math.round(amount / 25.0) * 25.0; // round to clean $25 increments
+        return Math.round(amount / 25.0) * 25.0;
       });
 
-      // Balance rounding differences to 2nd place
       const currentSum = firstPlace + lastPlace + midPayouts.reduce((a, b) => a + b, 0);
       midPayouts[0] += (netPurse - currentSum);
 
@@ -591,17 +576,25 @@
       await loadSchedule();
       await loadData();
       setupCrossScreenListeners();
+      checkPendingRegistrationsCount();
     });
 
     async function preloadMembers() {
-      try {
-        const { data } = await client
-          .from('anglers_membership')
-          .select('*')
-          .order('full_name', { ascending: true });
-        registeredMembersCache = data || [];
-      } catch (err) {
-        console.warn('Could not preload member roster:', err);
+      if (navigator.onLine) {
+        try {
+          const { data } = await client
+            .from('anglers_membership')
+            .select('*')
+            .order('full_name', { ascending: true });
+          if (data) {
+            registeredMembersCache = data;
+            localStorage.setItem('cached_members', JSON.stringify(data));
+          }
+        } catch (err) {
+          registeredMembersCache = JSON.parse(localStorage.getItem('cached_members') || '[]');
+        }
+      } else {
+        registeredMembersCache = JSON.parse(localStorage.getItem('cached_members') || '[]');
       }
     }
 
@@ -671,17 +664,24 @@
     }
 
     async function loadSchedule() {
-      let query = client.from('tournaments').select('*').order('event_date', { ascending: false });
-
-      if (currentUser && currentUserRole !== 'admin') {
-        query = query.eq('created_by', currentUser.id);
-        document.getElementById('scheduleSubtext').innerText = 'Director Station: Viewing your assigned events only';
-      } else if (currentUserRole === 'admin') {
-        document.getElementById('scheduleSubtext').innerText = 'Administrator Master Access: Viewing all director schedules across the league';
+      if (navigator.onLine) {
+        try {
+          let query = client.from('tournaments').select('*').order('event_date', { ascending: false });
+          if (currentUser && currentUserRole !== 'admin') {
+            query = query.eq('created_by', currentUser.id);
+            document.getElementById('scheduleSubtext').innerText = 'Director Station: Viewing your assigned events only';
+          } else if (currentUserRole === 'admin') {
+            document.getElementById('scheduleSubtext').innerText = 'Administrator Master Access: Viewing all director schedules across the league';
+          }
+          const { data } = await query;
+          allTournaments = data || [];
+          localStorage.setItem('cached_tournaments', JSON.stringify(allTournaments));
+        } catch (e) {
+          allTournaments = JSON.parse(localStorage.getItem('cached_tournaments') || '[]');
+        }
+      } else {
+        allTournaments = JSON.parse(localStorage.getItem('cached_tournaments') || '[]');
       }
-
-      const { data } = await query;
-      allTournaments = data || [];
 
       allTournaments.forEach(t => {
         if (t.division && !bctDivisions.includes(t.division)) {
@@ -769,11 +769,12 @@
         return;
       }
 
-      const { error } = await client.from('tournaments').delete().eq('id', id);
-
-      if (error) {
-        alert('Delete failed: ' + error.message);
-        return;
+      if (navigator.onLine) {
+        const { error } = await client.from('tournaments').delete().eq('id', id);
+        if (error) {
+          alert('Delete failed: ' + error.message);
+          return;
+        }
       }
 
       alert(`Event "${title}" has been deleted.`);
@@ -800,17 +801,23 @@
     async function loadData() {
       try {
         const targetId = getTargetTournamentId();
-        let query = client.from('tournaments').select('*');
+        let tData = [];
 
-        if (targetId) {
-          query = query.eq('id', targetId);
-        } else if (currentUser && currentUserRole !== 'admin') {
-          query = query.eq('created_by', currentUser.id).order('created_at', { ascending: false });
+        if (navigator.onLine) {
+          let query = client.from('tournaments').select('*');
+          if (targetId) {
+            query = query.eq('id', targetId);
+          } else if (currentUser && currentUserRole !== 'admin') {
+            query = query.eq('created_by', currentUser.id).order('created_at', { ascending: false });
+          } else {
+            query = query.order('created_at', { ascending: false });
+          }
+          const res = await query.limit(1);
+          tData = res.data || [];
         } else {
-          query = query.order('created_at', { ascending: false });
+          const cached = JSON.parse(localStorage.getItem('cached_tournaments') || '[]');
+          tData = targetId ? cached.filter(t => t.id === targetId) : cached;
         }
-
-        let { data: tData } = await query.limit(1);
 
         if (!tData || tData.length === 0) {
           document.getElementById('tournamentHeading').innerText = 'NO EVENT SELECTED';
@@ -850,22 +857,40 @@
         if (activeTournament.first_weighin_time) document.getElementById('weighinTimeInput').value = activeTournament.first_weighin_time.substring(0, 5);
         if (activeTournament.boats_per_flight) document.getElementById('boatsPerFlightInput').value = activeTournament.boats_per_flight;
 
-        const { data: pData } = await client
-          .from('tournament_participants')
-          .select('*')
-          .eq('tournament_id', activeTournament.id)
-          .order('created_at', { ascending: true });
+        // Fetch participants (online + offline merged)
+        let fetchedParticipants = [];
+        if (navigator.onLine) {
+          try {
+            const { data } = await client
+              .from('tournament_participants')
+              .select('*')
+              .eq('tournament_id', activeTournament.id)
+              .order('created_at', { ascending: true });
+            fetchedParticipants = data || [];
+            localStorage.setItem(`cached_participants_${activeTournament.id}`, JSON.stringify(fetchedParticipants));
+          } catch (e) {
+            fetchedParticipants = JSON.parse(localStorage.getItem(`cached_participants_${activeTournament.id}`) || '[]');
+          }
+        } else {
+          fetchedParticipants = JSON.parse(localStorage.getItem(`cached_participants_${activeTournament.id}`) || '[]');
+        }
 
-        participants = pData || [];
+        const offlineParticipants = JSON.parse(localStorage.getItem(`offline_roster_${activeTournament.id}`) || '[]');
+        const partMap = new Map();
+        fetchedParticipants.forEach(p => partMap.set(p.id, p));
+        offlineParticipants.forEach(p => partMap.set(p.id, p));
+        participants = Array.from(partMap.values());
+
         renderRoster();
         calculatePurseAndPayout();
         updateFlightScheduleDisplay();
         assignSequentialBoatNumber();
+        checkPendingRegistrationsCount();
 
       } catch (err) {
         console.error('Initialization error:', err);
-        document.getElementById('tournamentHeading').innerText = 'CONNECTION ERROR';
-        document.getElementById('syncDot').className = 'w-3 h-3 rounded-full bg-red-500';
+        document.getElementById('tournamentHeading').innerText = 'OFFLINE DESK READY';
+        document.getElementById('syncDot').className = 'w-3 h-3 rounded-full bg-amber-500';
       }
     }
 
@@ -882,7 +907,7 @@
       const existingNumbers = new Set();
       participants.forEach(p => {
         if (p.boat_number) existingNumbers.add(parseInt(p.boat_number, 10));
-        const match = p.display_name.match(/Boat #(\d+)/);
+        const match = (p.display_name || '').match(/Boat #(\d+)/);
         if (match) existingNumbers.add(parseInt(match[1], 10));
       });
 
@@ -925,7 +950,7 @@
     }
 
     function extractBoatNum(displayName) {
-      const match = displayName.match(/Boat #(\d+)/);
+      const match = (displayName || '').match(/Boat #(\d+)/);
       return match ? parseInt(match[1], 10) : 1;
     }
 
@@ -975,7 +1000,6 @@
       let entryFee, bbFee, housePct, netMain, bbPurse, tier;
 
       if (isBCT) {
-        // ================= BCT FIXED RULES =================
         entryFee = 80.00;
         document.getElementById('bctRuleTag').innerText = '🔒 BCT FIXED RULES ($65/BOAT NET • 1-IN-6 SCALE)';
         document.getElementById('bctRuleTag').className = 'text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded';
@@ -1003,7 +1027,6 @@
         bbPurse = totalBoats * 20.00;
         tier = getBct1In6Tier(totalBoats);
 
-        // Standard percentage rendering for BCT
         document.getElementById('fieldCount').innerText = `${totalBoats} Boats`;
         document.getElementById('grossPurse').innerText = `$${((totalBoats * entryFee) + bbPurse).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
         document.getElementById('netPurse').innerText = `$${netMain.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
@@ -1029,14 +1052,13 @@
           tr.className = idx === 0 ? 'text-amber-300 font-bold' : 'text-slate-300';
           tr.innerHTML = `
             <td class="py-1">${place === 1 ? '🥇 1st' : place === 2 ? '🥈 2nd' : place === 3 ? '🥉 3rd' : `${place}th`}</td>
-            <td class="py-1 text-right text-slate-400">${(pct * 100).toFixed(0)}%</td>
-            <td class="py-1 text-right font-black">$${payout.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td class="py-1 text-right text-slate-400 font-mono">${(pct * 100).toFixed(0)}%</td>
+            <td class="py-1 text-right font-black font-mono">$${payout.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
           `;
           tbody.appendChild(tr);
         });
 
       } else if (isWeekendWarrior) {
-        // ================= WEEKEND WARRIOR TOP-20% RULES =================
         entryFee = 350.00;
         document.getElementById('bctRuleTag').innerText = '🔒 WEEKEND WARRIOR (TOP 20% PAID • LAST SPOT GETS $350 BACK)';
         document.getElementById('bctRuleTag').className = 'text-[10px] font-mono font-bold bg-blue-500/20 text-blue-300 border border-blue-500/40 px-2 py-0.5 rounded';
@@ -1050,7 +1072,7 @@
         document.getElementById('inputBbFee').disabled = true;
         document.getElementById('inputBbFee').classList.add('opacity-60', 'cursor-not-allowed');
 
-        document.getElementById('inputHouseCut').value = 20; // 80% payback, 20% to AAFL
+        document.getElementById('inputHouseCut').value = 20;
         document.getElementById('inputHouseCut').disabled = true;
         document.getElementById('inputHouseCut').classList.add('opacity-60', 'cursor-not-allowed');
 
@@ -1104,7 +1126,6 @@
         });
 
       } else {
-        // ================= OPEN / CUSTOM TOURNAMENTS =================
         document.getElementById('bctRuleTag').classList.add('hidden');
 
         document.getElementById('inputEntryFee').disabled = false;
@@ -1231,25 +1252,34 @@
       const weigh = document.getElementById('weighinTimeInput').value;
       const perFlight = parseInt(document.getElementById('boatsPerFlightInput').value, 10) || 25;
 
-      const { error } = await client
-        .from('tournaments')
-        .update({
-          lake_name: lake,
-          event_date: date,
-          first_launch_time: launch + ':00',
-          first_weighin_time: weigh + ':00',
-          boats_per_flight: perFlight
-        })
-        .eq('id', activeTournament.id);
+      if (navigator.onLine) {
+        const { error } = await client
+          .from('tournaments')
+          .update({
+            lake_name: lake,
+            event_date: date,
+            first_launch_time: launch + ':00',
+            first_weighin_time: weigh + ':00',
+            boats_per_flight: perFlight
+          })
+          .eq('id', activeTournament.id);
 
-      if (error) {
-        alert('Error: ' + error.message);
-      } else {
-        alert('Schedule Settings Saved!');
-        await loadSchedule();
-        updateFlightScheduleDisplay();
-        renderRoster();
+        if (error) {
+          alert('Error: ' + error.message);
+          return;
+        }
       }
+
+      activeTournament.lake_name = lake;
+      activeTournament.event_date = date;
+      activeTournament.first_launch_time = launch + ':00';
+      activeTournament.first_weighin_time = weigh + ':00';
+      activeTournament.boats_per_flight = perFlight;
+
+      alert('Schedule Settings Saved!');
+      await loadSchedule();
+      updateFlightScheduleDisplay();
+      renderRoster();
     }
 
     document.getElementById('regForm').addEventListener('submit', async (e) => {
@@ -1270,55 +1300,90 @@
         ? `Boat #${boatNum} - ${capName} & ${partner}` 
         : `Boat #${boatNum} - ${capName}`;
 
-      const btn = document.getElementById('saveBtn');
-      btn.innerText = 'Registering...';
-      btn.disabled = true;
+      const newParticipant = {
+        id: 'local_' + Date.now(),
+        tournament_id: activeTournament.id,
+        display_name: fullName,
+        boat_number: boatNum,
+        phone: phone || null,
+        flight_number: flightNum,
+        launch_time: launchTime,
+        weighin_time: weighinTime,
+        created_at: new Date().toISOString()
+      };
 
-      try {
-        const { data, error } = await client
-          .from('tournament_participants')
-          .insert([{
-            tournament_id: activeTournament.id,
-            display_name: fullName,
-            boat_number: boatNum,
-            phone: phone || null,
-            flight_number: flightNum,
-            launch_time: launchTime,
-            weighin_time: weighinTime
-          }])
-          .select();
+      // 1. Write to device local storage queue immediately
+      let localRoster = JSON.parse(localStorage.getItem(`offline_roster_${activeTournament.id}`) || '[]');
+      localRoster.push(newParticipant);
+      localStorage.setItem(`offline_roster_${activeTournament.id}`, JSON.stringify(localRoster));
 
-        btn.innerText = '+ CONFIRM REGISTRATION & DISPATCH';
-        btn.disabled = false;
+      // 2. Immediately update in-memory state and UI
+      participants.push(newParticipant);
+      renderRoster();
+      calculatePurseAndPayout();
+      updateFlightScheduleDisplay();
+      assignSequentialBoatNumber();
 
-        if (error) {
-          alert('Database Error: ' + error.message);
-          return;
-        }
+      document.getElementById('captainName').value = '';
+      document.getElementById('partnerName').value = '';
+      document.getElementById('captainPhone').value = '';
 
-        const added = data[0];
-        participants.push(added);
-
-        broadcast.postMessage({
-          type: 'NEW_ANGLER_REGISTERED',
-          tournamentId: activeTournament.id,
-          angler: added
-        });
-
-        document.getElementById('captainName').value = '';
-        document.getElementById('partnerName').value = '';
-        document.getElementById('captainPhone').value = '';
-
-        renderRoster();
-        calculatePurseAndPayout();
-        updateFlightScheduleDisplay();
-        assignSequentialBoatNumber();
-
-      } catch (err) {
-        btn.innerText = '+ CONFIRM REGISTRATION & DISPATCH';
-        btn.disabled = false;
-        alert('Error: ' + err.message);
+      // 3. Cloud sync if online
+      if (navigator.onLine) {
+        await syncPendingRegistrations();
+      } else {
+        checkPendingRegistrationsCount();
       }
+
+      broadcast.postMessage({
+        type: 'NEW_ANGLER_REGISTERED',
+        tournamentId: activeTournament.id,
+        angler: newParticipant
+      });
+    });
+
+    async function syncPendingRegistrations() {
+      if (!activeTournament) return;
+      let localRoster = JSON.parse(localStorage.getItem(`offline_roster_${activeTournament.id}`) || '[]');
+      if (localRoster.length === 0) {
+        checkPendingRegistrationsCount();
+        return;
+      }
+
+      const payload = localRoster.map(p => {
+        const item = { ...p };
+        if (item.id.toString().startsWith('local_')) delete item.id;
+        return item;
+      });
+
+      const { data, error } = await client
+        .from('tournament_participants')
+        .insert(payload)
+        .select();
+
+      if (!error) {
+        localStorage.removeItem(`offline_roster_${activeTournament.id}`);
+        console.log('Roster synced to cloud.');
+      }
+      checkPendingRegistrationsCount();
+    }
+
+    function checkPendingRegistrationsCount() {
+      if (!activeTournament) return;
+      const localRoster = JSON.parse(localStorage.getItem(`offline_roster_${activeTournament.id}`) || '[]');
+      const badge = document.getElementById('regOfflineQueueBadge');
+      const count = document.getElementById('regOfflineQueueCount');
+
+      if (localRoster.length > 0) {
+        badge.classList.remove('hidden');
+        count.innerText = localRoster.length;
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    window.addEventListener('online', () => {
+      syncPendingRegistrations();
     });
 
     function openNewTournamentModal() {
@@ -1375,7 +1440,6 @@
           event_date: date, 
           is_active: true,
           entry_fee: isBCT ? 80.00 : isWW ? 350.00 : 150.00,
-          big_bass_fee: isBCT ? 20.00 : isWW ? 0.00 : 20.00,
           house_retention_pct: isBCT ? 0.00 : isWW ? 20.00 : 10.00
         };
 
@@ -1416,12 +1480,25 @@
 
     async function removeParticipant(id) {
       if (!confirm('Remove this boat?')) return;
-      await client.from('tournament_participants').delete().eq('id', id);
+      
+      if (navigator.onLine && !id.toString().startsWith('local_')) {
+        await client.from('tournament_participants').delete().eq('id', id);
+      }
+
       participants = participants.filter(p => p.id !== id);
+      
+      // Also remove from offline queue if queued
+      if (activeTournament) {
+        let localRoster = JSON.parse(localStorage.getItem(`offline_roster_${activeTournament.id}`) || '[]');
+        localRoster = localRoster.filter(p => p.id !== id);
+        localStorage.setItem(`offline_roster_${activeTournament.id}`, JSON.stringify(localRoster));
+      }
+
       renderRoster();
       calculatePurseAndPayout();
       updateFlightScheduleDisplay();
       assignSequentialBoatNumber();
+      checkPendingRegistrationsCount();
     }
 
     function setupCrossScreenListeners() {
@@ -1441,14 +1518,16 @@
       };
     }
   </script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .then(() => console.log('Offline service worker ready.'))
-        .catch(err => console.warn('Worker registration failed:', err));
-    });
-  }
-</script>
-</body>
+
+  <!-- SERVICE WORKER REGISTRATION -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(() => console.log('Offline service worker registered.'))
+          .catch(err => console.warn('Service worker registration failed:', err));
+      });
+    }
+  </script>
 </body>
 </html>
