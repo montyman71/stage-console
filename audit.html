@@ -66,16 +66,16 @@
         </div>
         <div class="text-right font-mono text-xs text-slate-400">
           <div>Report Generated: <span id="auditTimestamp" class="text-white font-bold">--</span></div>
-          <div>Director ID: <span id="auditDirectorName" class="text-amber-400 font-bold">Director Station</span></div>
+          <div>Director Station: <span id="auditDirectorName" class="text-amber-400 font-bold">Authorized Desk</span></div>
         </div>
       </div>
 
       <!-- PARTICIPATION METRICS -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl text-center">
-          <span class="text-[11px] font-bold text-slate-400 uppercase">Total Field (Boats / Teams)</span>
+          <span class="text-[11px] font-bold text-slate-400 uppercase">Total Field (Boats)</span>
           <div id="valTotalAnglers" class="text-3xl font-black font-mono text-white mt-1">0</div>
-          <span class="text-[10px] font-mono text-slate-500">Subject to $5 league sanction fee</span>
+          <span id="labelSanctionSub" class="text-[10px] font-mono text-slate-500">Subject to AAFL sanctioning</span>
         </div>
 
         <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl text-center">
@@ -114,11 +114,11 @@
             </tr>
             <tr>
               <td class="py-3 px-4 font-bold text-white">
-                Tournament Angler Sanction Fee
-                <div class="text-[10px] text-slate-400 font-sans">League trail operations, digital scales & leaderboard fee</div>
+                <span id="labelSanctionTitle">League Sanction Fee</span>
+                <div id="labelSanctionDesc" class="text-[10px] text-slate-400 font-sans">League trail operations, digital scales & leaderboard platform</div>
               </td>
               <td id="qtyAnglers" class="py-3 px-4 text-center font-bold">0</td>
-              <td class="py-3 px-4 text-right text-slate-300">$5.00</td>
+              <td id="rateAnglers" class="py-3 px-4 text-right text-slate-300">$5.00</td>
               <td id="subtotalAnglers" class="py-3 px-4 text-right font-black text-white">$0.00</td>
             </tr>
             <tr class="bg-emerald-950/20 text-emerald-300 font-bold text-sm">
@@ -140,8 +140,8 @@
       <!-- INSTRUCTIONS -->
       <div class="p-4 bg-slate-950/60 border border-slate-800 rounded-xl text-xs space-y-1 text-slate-400 font-mono">
         <div class="font-bold text-white uppercase">Remittance & Audit Policy:</div>
-        <div>1. Remit total league funds ($45/member, $5/angler) within 48 hours of event completion.</div>
-        <div>2. Official copies are emailed directly to <span class="text-amber-400">support@theamericanfishingleague.com</span>.</div>
+        <div>1. Remit total league funds within 48 hours of event completion.</div>
+        <div>2. Official copies are sent directly to <span class="text-amber-400">support@theamericanfishingleague.com</span>.</div>
       </div>
 
     </div>
@@ -158,7 +158,6 @@
     let newMembersList = [];
 
     const LEAGUE_MEMBER_CUT = 45.00;
-    const LEAGUE_ANGLER_CUT = 5.00;
 
     function getTargetTournamentId() {
       const p = new URLSearchParams(window.location.search);
@@ -181,36 +180,84 @@
       document.getElementById('linkBack').href = `register.html?tid=${tid}`;
 
       // 1. Fetch Tournament
-      const { data: tData } = await client.from('tournaments').select('*').eq('id', tid).single();
-      if (!tData) return;
-      activeTournament = tData;
+      if (navigator.onLine) {
+        try {
+          const { data } = await client.from('tournaments').select('*').eq('id', tid).single();
+          activeTournament = data;
+        } catch (e) {
+          const cached = JSON.parse(localStorage.getItem('cached_tournaments') || '[]');
+          activeTournament = cached.find(t => t.id === tid);
+        }
+      } else {
+        const cached = JSON.parse(localStorage.getItem('cached_tournaments') || '[]');
+        activeTournament = cached.find(t => t.id === tid);
+      }
+
+      if (!activeTournament) return;
 
       document.getElementById('auditEventTitle').innerText = activeTournament.title.toUpperCase();
       document.getElementById('auditTrailBadge').innerText = activeTournament.trail_series || 'AAFL';
       document.getElementById('slipTitle').innerText = `${activeTournament.title} - FINANCIAL AUDIT`;
       document.getElementById('slipDetails').innerText = `Venue: ${activeTournament.lake_name || 'Tournament Water'} • Date: ${activeTournament.event_date || 'TBD'} • PIN: ${activeTournament.pin}`;
 
-      // 2. Fetch Participants
-      const { data: pData } = await client
-        .from('tournament_participants')
-        .select('*')
-        .eq('tournament_id', tid);
+      // 2. Fetch Participants (online + offline merged)
+      let fetchedParticipants = [];
+      if (navigator.onLine) {
+        try {
+          const { data } = await client
+            .from('tournament_participants')
+            .select('*')
+            .eq('tournament_id', tid);
+          fetchedParticipants = data || [];
+        } catch (e) {
+          fetchedParticipants = JSON.parse(localStorage.getItem(`cached_participants_${tid}`) || '[]');
+        }
+      } else {
+        fetchedParticipants = JSON.parse(localStorage.getItem(`cached_participants_${tid}`) || '[]');
+      }
 
-      tournamentParticipants = pData || [];
+      const offlineParticipants = JSON.parse(localStorage.getItem(`offline_roster_${tid}`) || '[]');
+      const partMap = new Map();
+      fetchedParticipants.forEach(p => partMap.set(p.id, p));
+      offlineParticipants.forEach(p => partMap.set(p.id, p));
+      tournamentParticipants = Array.from(partMap.values());
       const totalAnglers = tournamentParticipants.length;
 
-      // 3. Fetch New Members Registered On or Near Event Date
-      let memberQuery = client.from('anglers_membership').select('*');
-      if (activeTournament.event_date) {
-        memberQuery = memberQuery.eq('joined_date', activeTournament.event_date);
+      // 3. Fetch New Members Registered on Event Date
+      if (navigator.onLine) {
+        try {
+          let memberQuery = client.from('anglers_membership').select('*');
+          if (activeTournament.event_date) {
+            memberQuery = memberQuery.eq('joined_date', activeTournament.event_date);
+          }
+          const { data: mData } = await memberQuery;
+          newMembersList = mData || [];
+        } catch (e) {
+          newMembersList = [];
+        }
       }
-      const { data: mData } = await memberQuery;
-      newMembersList = mData || [];
       const totalNewMembers = newMembersList.length;
 
-      // 4. Calculations
+      // 4. Trail-Specific League Fee Calculation
+      const isWW = activeTournament.trail_series === 'AAFL - Weekend Warrior Series' ||
+                   (activeTournament.title && activeTournament.title.toLowerCase().includes('weekend warrior'));
+
+      const leagueAnglerCut = isWW ? 70.00 : 5.00; // $70/boat for WW (20% house retention), $5/boat for BCT
+      
+      if (isWW) {
+        document.getElementById('labelSanctionTitle').innerText = 'AAFL Retention (20% Cut)';
+        document.getElementById('labelSanctionDesc').innerText = 'League purse retention from $350 entry fee ($70 / boat)';
+        document.getElementById('labelSanctionSub').innerText = 'Subject to $70 / boat AAFL retention';
+        document.getElementById('rateAnglers').innerText = '$70.00';
+      } else {
+        document.getElementById('labelSanctionTitle').innerText = 'Tournament Angler Sanction Fee';
+        document.getElementById('labelSanctionDesc').innerText = 'League trail operations, digital scales & leaderboard fee';
+        document.getElementById('labelSanctionSub').innerText = 'Subject to $5 / boat sanction fee';
+        document.getElementById('rateAnglers').innerText = '$5.00';
+      }
+
       const membersTotal = totalNewMembers * LEAGUE_MEMBER_CUT;
-      const anglersTotal = totalAnglers * LEAGUE_ANGLER_CUT;
+      const anglersTotal = totalAnglers * leagueAnglerCut;
       const grandTotalDue = membersTotal + anglersTotal;
 
       // 5. Update UI
@@ -247,8 +294,13 @@
 
       const totalAnglers = tournamentParticipants.length;
       const totalNewMembers = newMembersList.length;
+
+      const isWW = activeTournament.trail_series === 'AAFL - Weekend Warrior Series' ||
+                   (activeTournament.title && activeTournament.title.toLowerCase().includes('weekend warrior'));
+      const leagueAnglerCut = isWW ? 70.00 : 5.00;
+
       const membersTotal = totalNewMembers * LEAGUE_MEMBER_CUT;
-      const anglersTotal = totalAnglers * LEAGUE_ANGLER_CUT;
+      const anglersTotal = totalAnglers * leagueAnglerCut;
       const grandTotalDue = membersTotal + anglersTotal;
 
       const subject = encodeURIComponent(`AAFL Tournament Financial Settlement: ${activeTournament.title} (${activeTournament.event_date || 'Event Day'})`);
@@ -269,11 +321,11 @@
         `Event Date: ${activeTournament.event_date}\n` +
         `Audit Timestamp: ${new Date().toLocaleString()}\n\n` +
         `PARTICIPATION AUDIT:\n` +
-        `Total Anglers / Boats Registered: ${totalAnglers}\n` +
+        `Total Boats Registered: ${totalAnglers}\n` +
         `New AAFL Memberships Issued: ${totalNewMembers}\n\n` +
         `FINANCIAL BREAKDOWN DUE TO LEAGUE:\n` +
         `1. New Memberships (${totalNewMembers} x $45.00): $${membersTotal.toFixed(2)}\n` +
-        `2. Angler Sanction Fees (${totalAnglers} x $5.00): $${anglersTotal.toFixed(2)}\n` +
+        `2. ${isWW ? 'AAFL Retention (20% Cut)' : 'Angler Sanction Fees'} (${totalAnglers} x $${leagueAnglerCut.toFixed(2)}): $${anglersTotal.toFixed(2)}\n` +
         `--------------------------------------------------\n` +
         `TOTAL SETTLEMENT DUE TO AAFL: $${grandTotalDue.toFixed(2)}\n\n` +
         `NEW MEMBERS REGISTERED FOR THIS EVENT:\n` +
@@ -281,18 +333,19 @@
         `Certified by Tournament Director Console.\n`
       );
 
-      // Opens native mail client addressed directly to support@theamericanfishingleague.com
       window.location.href = `mailto:support@theamericanfishingleague.com?subject=${subject}&body=${body}`;
     }
   </script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .then(() => console.log('Offline service worker ready.'))
-        .catch(err => console.warn('Worker registration failed:', err));
-    });
-  }
-</script>
-</body>
+
+  <!-- SERVICE WORKER REGISTRATION -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(() => console.log('Offline service worker registered.'))
+          .catch(err => console.warn('Service worker registration failed:', err));
+      });
+    }
+  </script>
 </body>
 </html>
