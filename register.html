@@ -409,19 +409,6 @@
       10: [0.30, 0.18, 0.12, 0.09, 0.08, 0.07, 0.06, 0.04, 0.03, 0.03]
     };
 
-    const BCT_1_IN_6_PRESETS = {
-      1: [1.00],
-      2: [0.65, 0.35],
-      3: [0.50, 0.30, 0.20],
-      4: [0.45, 0.28, 0.17, 0.10],
-      5: [0.40, 0.25, 0.16, 0.11, 0.08],
-      6: [0.35, 0.23, 0.16, 0.12, 0.08, 0.06],
-      7: [0.32, 0.21, 0.15, 0.11, 0.09, 0.07, 0.05],
-      8: [0.30, 0.19, 0.14, 0.11, 0.09, 0.07, 0.06, 0.04],
-      9: [0.28, 0.18, 0.13, 0.10, 0.08, 0.07, 0.06, 0.05, 0.05],
-      10: [0.27, 0.17, 0.12, 0.09, 0.08, 0.07, 0.06, 0.05, 0.05, 0.04]
-    };
-
     function getAutoTier(count) {
       if (count <= 0) return [];
       if (count <= 5) return SCALE_PRESETS[1];
@@ -433,11 +420,50 @@
       return SCALE_PRESETS[10];
     }
 
-    function getBct1In6Tier(count) {
-      if (count <= 0) return [];
-      if (count < 6) return BCT_1_IN_6_PRESETS[1];
-      const places = Math.min(10, Math.floor(count / 6) + 1);
-      return BCT_1_IN_6_PRESETS[places] || BCT_1_IN_6_PRESETS[10];
+    /**
+     * Official AAFL Blue Collar Trail (BCT) 1-in-6 Payout Engine
+     * - Entry fee: $80 ($65 net purse / boat)
+     * - Uncapped payout depth: Math.floor(boats / 6) + 1
+     * - Guarantees the last paid place receives at least their $80 entry fee back
+     * - 1st place receives ~30%–35% of the total purse in larger fields
+     */
+    function computeBctPayouts(totalBoats) {
+      if (totalBoats <= 0) return [];
+      const netPurse = totalBoats * 65.00;
+      const placesPaid = totalBoats < 6 ? 1 : Math.floor(totalBoats / 6) + 1;
+
+      if (placesPaid === 1) return [netPurse];
+
+      if (placesPaid === 2) {
+        const second = Math.max(80.0, Math.round((netPurse * 0.35) / 5.0) * 5.0);
+        return [netPurse - second, second];
+      }
+
+      const minCheck = 80.0;
+      const targetFirst = Math.max(
+        Math.round((netPurse * 0.33) / 10.0) * 10.0,
+        minCheck * 2.5
+      );
+
+      const remPlaces = placesPaid - 1;
+      const remPurse = netPurse - targetFirst;
+      const surplus = remPurse - (remPlaces * minCheck);
+
+      let weights = [];
+      for (let i = 0; i < remPlaces; i++) {
+        weights.push(Math.pow(remPlaces - i, 1.75));
+      }
+      const sumWeights = weights.reduce((a, b) => a + b, 0);
+
+      let lowerPlaces = weights.map(w => {
+        const val = minCheck + (surplus * (w / sumWeights));
+        return Math.round(val / 5.0) * 5.0;
+      });
+
+      const currentSum = targetFirst + lowerPlaces.reduce((a, b) => a + b, 0);
+      lowerPlaces[0] += (netPurse - currentSum);
+
+      return [targetFirst, ...lowerPlaces];
     }
 
     function getWeekendWarriorBigBass(boats) {
@@ -999,66 +1025,70 @@
       );
 
       const totalBoats = participants.length;
-      let entryFee, bbFee, housePct, netMain, bbPurse, tier;
+      let entryFee, bbFee, housePct, netMain, bbPurse;
 
       if (isBCT) {
         entryFee = 80.00;
-        document.getElementById('bctRuleTag').innerText = '🔒 BCT FIXED RULES ($65/BOAT NET • 1-IN-6 SCALE)';
+        document.getElementById('bctRuleTag').innerText = '🔒 BCT FIXED RULES ($65/BOAT NET • 1-IN-6 SCALE • LAST SPOT GETS $80 BACK)';
         document.getElementById('bctRuleTag').className = 'text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded';
         document.getElementById('bctRuleTag').classList.remove('hidden');
 
         document.getElementById('inputEntryFee').value = 80;
         document.getElementById('inputEntryFee').disabled = true;
-        document.getElementById('inputEntryFee').classList.add('opacity-60', 'cursor-not-allowed');
-
         document.getElementById('inputBbFee').value = 20;
         document.getElementById('inputBbFee').disabled = true;
-        document.getElementById('inputBbFee').classList.add('opacity-60', 'cursor-not-allowed');
-
         document.getElementById('inputHouseCut').value = 0;
         document.getElementById('inputHouseCut').disabled = true;
-        document.getElementById('inputHouseCut').classList.add('opacity-60', 'cursor-not-allowed');
-
         document.getElementById('inputPlacesPaid').disabled = true;
-        document.getElementById('inputPlacesPaid').classList.add('opacity-60', 'cursor-not-allowed');
 
         document.getElementById('labelEntryFee').innerText = 'Paid Main Entry ($80)';
         document.getElementById('labelBigBassFee').innerText = 'Paid Big Bass Side Pot ($20)';
 
         netMain = totalBoats * 65.00;
         bbPurse = totalBoats * 20.00;
-        tier = getBct1In6Tier(totalBoats);
+
+        const dollarPayouts = computeBctPayouts(totalBoats);
 
         document.getElementById('fieldCount').innerText = `${totalBoats} Boats`;
         document.getElementById('grossPurse').innerText = `$${((totalBoats * entryFee) + bbPurse).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
         document.getElementById('netPurse').innerText = `$${netMain.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
         document.getElementById('bigBassPurse').innerText = `$${bbPurse.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
         document.getElementById('bbPayoutDisplay').innerText = `$${bbPurse.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-        document.getElementById('placesPaidBadge').innerText = `${tier.length} Places Paid (1-in-6 Scale)`;
+        document.getElementById('placesPaidBadge').innerText = `${dollarPayouts.length} Places Paid (1-in-6 Scale)`;
 
-        const firstEst = tier.length > 0 ? (netMain * tier[0]) : 0;
+        const firstEst = dollarPayouts.length > 0 ? dollarPayouts[0] : 0;
         document.getElementById('firstPlaceEstimate').innerText = `$${firstEst.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
 
         const tbody = document.getElementById('payoutTableBody');
         tbody.innerHTML = '';
 
-        if (tier.length === 0 || totalBoats === 0) {
+        if (dollarPayouts.length === 0 || totalBoats === 0) {
           tbody.innerHTML = '<tr><td colspan="3" class="py-2 text-center text-slate-500">Register boats to calculate purse</td></tr>';
           return;
         }
 
-        tier.forEach((pct, idx) => {
+        dollarPayouts.forEach((amount, idx) => {
           const place = idx + 1;
-          const payout = netMain * pct;
+          const isLast = (idx === dollarPayouts.length - 1 && dollarPayouts.length > 1);
+          const pct = ((amount / netMain) * 100).toFixed(1);
           const tr = document.createElement('tr');
-          tr.className = idx === 0 ? 'text-amber-300 font-bold' : 'text-slate-300';
+          tr.className = idx === 0 
+            ? 'text-amber-300 font-bold' 
+            : isLast 
+            ? 'text-emerald-400 font-bold' 
+            : 'text-slate-300';
+
           tr.innerHTML = `
-            <td class="py-1">${place === 1 ? '🥇 1st' : place === 2 ? '🥈 2nd' : place === 3 ? '🥉 3rd' : `${place}th`}</td>
-            <td class="py-1 text-right text-slate-400 font-mono">${(pct * 100).toFixed(0)}%</td>
-            <td class="py-1 text-right font-black font-mono">$${payout.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+            <td class="py-1">
+              ${place === 1 ? '🥇 1st' : place === 2 ? '🥈 2nd' : place === 3 ? '🥉 3rd' : `${place}th`}
+              ${isLast ? '<span class="text-[9px] text-emerald-400 ml-1 font-mono uppercase">(Entry Fee Back)</span>' : ''}
+            </td>
+            <td class="py-1 text-right text-slate-400 font-mono">${pct}%</td>
+            <td class="py-1 text-right font-black font-mono">$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
           `;
           tbody.appendChild(tr);
         });
+        return;
 
       } else if (isWeekendWarrior) {
         entryFee = 350.00;
@@ -1151,7 +1181,7 @@
         bbPurse = totalBoats * bbFee;
 
         const overrideVal = document.getElementById('inputPlacesPaid').value;
-        tier = (overrideVal === 'auto') ? getAutoTier(totalBoats) : (SCALE_PRESETS[parseInt(overrideVal, 10)] || []);
+        const tier = (overrideVal === 'auto') ? getAutoTier(totalBoats) : (SCALE_PRESETS[parseInt(overrideVal, 10)] || []);
 
         document.getElementById('fieldCount').innerText = `${totalBoats} Boats`;
         document.getElementById('grossPurse').innerText = `$${((totalBoats * entryFee) + bbPurse).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
@@ -1207,7 +1237,6 @@
         const date = document.getElementById('dateInput').value || 'Tournament Day';
         const rawPhone = p.phone ? p.phone.replace(/[^0-9]/g, '') : '';
         
-        // Dynamic Digital Waiver link
         const waiverUrl = `${window.location.origin}${window.location.pathname.replace('register.html', 'waiver.html')}?tid=${activeTournament ? activeTournament.id : ''}&pid=${p.id}&name=${encodeURIComponent(p.display_name)}&phone=${encodeURIComponent(p.phone || '')}&boat=${boatNum}`;
 
         const smsBody = encodeURIComponent(
@@ -1323,7 +1352,6 @@
         created_at: new Date().toISOString()
       };
 
-      // Save directly to offline storage queue immediately
       let localRoster = JSON.parse(localStorage.getItem(`offline_roster_${activeTournament.id}`) || '[]');
       localRoster.push(newParticipant);
       localStorage.setItem(`offline_roster_${activeTournament.id}`, JSON.stringify(localRoster));
@@ -1338,7 +1366,6 @@
       document.getElementById('partnerName').value = '';
       document.getElementById('captainPhone').value = '';
 
-      // Auto-trigger waiver SMS to boater
       if (phone) {
         const rawPhone = phone.replace(/[^0-9]/g, '');
         const waiverUrl = `${window.location.origin}${window.location.pathname.replace('register.html', 'waiver.html')}?tid=${activeTournament.id}&pid=${newParticipant.id}&name=${encodeURIComponent(capName)}&phone=${encodeURIComponent(phone)}&boat=${boatNum}`;
