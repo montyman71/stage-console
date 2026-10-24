@@ -148,7 +148,7 @@
         <div>
           <label class="text-[11px] font-bold uppercase text-slate-400 block mb-1">Places Paid Override</label>
           <select id="inputPlacesPaid" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white font-mono font-bold text-xs focus:border-blue-500 focus:outline-none">
-            <option value="auto">Auto (Official Scale)</option>
+            <option value="auto">Auto (Uncapped Scale)</option>
             <option value="1">Top 1 Spot (100%)</option>
             <option value="2">Top 2 Spots (65 / 35)</option>
             <option value="3">Top 3 Spots (50 / 30 / 20)</option>
@@ -156,6 +156,10 @@
             <option value="5">Top 5 Spots (40 / 25 / 16 / 11 / 8)</option>
             <option value="7">Top 7 Spots</option>
             <option value="10">Top 10 Spots</option>
+            <option value="12">Top 12 Spots</option>
+            <option value="15">Top 15 Spots</option>
+            <option value="20">Top 20 Spots</option>
+            <option value="25">Top 25 Spots</option>
           </select>
         </div>
       </div>
@@ -399,25 +403,56 @@
     const DEFAULT_DIVISIONS = ['Toho', 'Harris Chain', 'N. Florida'];
     let bctDivisions = JSON.parse(localStorage.getItem('aafl_bct_divisions')) || DEFAULT_DIVISIONS;
 
-    const SCALE_PRESETS = {
-      1: [1.00],
-      2: [0.65, 0.35],
-      3: [0.50, 0.30, 0.20],
-      4: [0.45, 0.28, 0.17, 0.10],
-      5: [0.40, 0.25, 0.16, 0.11, 0.08],
-      7: [0.35, 0.22, 0.14, 0.10, 0.08, 0.06, 0.05],
-      10: [0.30, 0.18, 0.12, 0.09, 0.08, 0.07, 0.06, 0.04, 0.03, 0.03]
-    };
+    /**
+     * Official Open Tournament Dynamic Payout Generator
+     * Generates smooth tournament payout percentages for ANY number of places (uncapped)
+     */
+    function getOpenPayoutScale(numPlaces) {
+      if (numPlaces <= 0) return [];
+      if (numPlaces === 1) return [1.00];
+      if (numPlaces === 2) return [0.65, 0.35];
+      if (numPlaces === 3) return [0.50, 0.30, 0.20];
+      if (numPlaces === 4) return [0.45, 0.28, 0.17, 0.10];
+      if (numPlaces === 5) return [0.40, 0.25, 0.16, 0.11, 0.08];
+      if (numPlaces === 7) return [0.35, 0.22, 0.14, 0.10, 0.08, 0.06, 0.05];
+      if (numPlaces === 10) return [0.30, 0.18, 0.12, 0.09, 0.08, 0.07, 0.06, 0.04, 0.03, 0.03];
 
+      // Dynamic curve for uncapped places (e.g. 6, 8, 9, 11, 12, 15, 20, 25+)
+      const p1 = Math.max(0.22, 0.35 - (numPlaces - 1) * 0.007);
+      const rem = 1.0 - p1;
+      let weights = [];
+      for (let i = 0; i < numPlaces - 1; i++) {
+        weights.push(Math.pow(numPlaces - 1 - i, 1.35));
+      }
+      const sumWeights = weights.reduce((a, b) => a + b, 0);
+
+      let pcts = weights.map(w => Math.round((w / sumWeights) * rem * 1000) / 1000);
+      pcts.unshift(Math.round(p1 * 1000) / 1000);
+
+      // Balance rounding to 1.000
+      const currentSum = pcts.reduce((a, b) => a + b, 0);
+      pcts[0] = Math.round((pcts[0] + (1.0 - currentSum)) * 1000) / 1000;
+
+      return pcts;
+    }
+
+    /**
+     * Uncapped Auto Tier for Open Tournaments
+     * Seamlessly scales past 75 boats (adds 1 spot for every 8–10 additional boats)
+     */
     function getAutoTier(count) {
       if (count <= 0) return [];
-      if (count <= 5) return SCALE_PRESETS[1];
-      if (count <= 10) return SCALE_PRESETS[2];
-      if (count <= 20) return SCALE_PRESETS[3];
-      if (count <= 35) return SCALE_PRESETS[4];
-      if (count <= 50) return SCALE_PRESETS[5];
-      if (count <= 75) return SCALE_PRESETS[7];
-      return SCALE_PRESETS[10];
+      if (count <= 5) return getOpenPayoutScale(1);
+      if (count <= 10) return getOpenPayoutScale(2);
+      if (count <= 20) return getOpenPayoutScale(3);
+      if (count <= 35) return getOpenPayoutScale(4);
+      if (count <= 50) return getOpenPayoutScale(5);
+      if (count <= 65) return getOpenPayoutScale(6);
+      if (count <= 75) return getOpenPayoutScale(7);
+      
+      // Uncapped beyond 75 boats:
+      const extraPlaces = Math.floor((count - 75) / 9) + 1;
+      return getOpenPayoutScale(7 + extraPlaces);
     }
 
     /**
@@ -1098,18 +1133,11 @@
 
         document.getElementById('inputEntryFee').value = 350;
         document.getElementById('inputEntryFee').disabled = true;
-        document.getElementById('inputEntryFee').classList.add('opacity-60', 'cursor-not-allowed');
-
         document.getElementById('inputBbFee').value = 'Tiered';
         document.getElementById('inputBbFee').disabled = true;
-        document.getElementById('inputBbFee').classList.add('opacity-60', 'cursor-not-allowed');
-
         document.getElementById('inputHouseCut').value = 20;
         document.getElementById('inputHouseCut').disabled = true;
-        document.getElementById('inputHouseCut').classList.add('opacity-60', 'cursor-not-allowed');
-
         document.getElementById('inputPlacesPaid').disabled = true;
-        document.getElementById('inputPlacesPaid').classList.add('opacity-60', 'cursor-not-allowed');
 
         document.getElementById('labelEntryFee').innerText = 'Paid Main Entry ($350)';
         document.getElementById('labelBigBassFee').innerText = 'Paid Big Bass (Included in Purse)';
@@ -1158,6 +1186,7 @@
         });
 
       } else {
+        // ================= OPEN TOURNAMENT (UNCAPPED DYNAMIC SCALE) =================
         document.getElementById('bctRuleTag').classList.add('hidden');
 
         document.getElementById('inputEntryFee').disabled = false;
@@ -1181,14 +1210,16 @@
         bbPurse = totalBoats * bbFee;
 
         const overrideVal = document.getElementById('inputPlacesPaid').value;
-        const tier = (overrideVal === 'auto') ? getAutoTier(totalBoats) : (SCALE_PRESETS[parseInt(overrideVal, 10)] || []);
+        const tier = (overrideVal === 'auto') 
+          ? getAutoTier(totalBoats) 
+          : getOpenPayoutScale(parseInt(overrideVal, 10));
 
         document.getElementById('fieldCount').innerText = `${totalBoats} Boats`;
         document.getElementById('grossPurse').innerText = `$${((totalBoats * entryFee) + bbPurse).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
         document.getElementById('netPurse').innerText = `$${netMain.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
         document.getElementById('bigBassPurse').innerText = `$${bbPurse.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
         document.getElementById('bbPayoutDisplay').innerText = `$${bbPurse.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-        document.getElementById('placesPaidBadge').innerText = `${tier.length} Places Paid`;
+        document.getElementById('placesPaidBadge').innerText = `${tier.length} Places Paid (Uncapped)`;
 
         const firstEst = tier.length > 0 ? (netMain * tier[0]) : 0;
         document.getElementById('firstPlaceEstimate').innerText = `$${firstEst.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
@@ -1208,7 +1239,7 @@
           tr.className = idx === 0 ? 'text-amber-300 font-bold' : 'text-slate-300';
           tr.innerHTML = `
             <td class="py-1">${place === 1 ? '🥇 1st' : place === 2 ? '🥈 2nd' : place === 3 ? '🥉 3rd' : `${place}th`}</td>
-            <td class="py-1 text-right text-slate-400 font-mono">${(pct * 100).toFixed(0)}%</td>
+            <td class="py-1 text-right text-slate-400 font-mono">${(pct * 100).toFixed(1)}%</td>
             <td class="py-1 text-right font-black font-mono">$${payout.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
           `;
           tbody.appendChild(tr);
