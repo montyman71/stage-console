@@ -1155,11 +1155,18 @@
 
         document.getElementById('inputEntryFee').value = 350;
         document.getElementById('inputEntryFee').disabled = true;
+        document.getElementById('inputEntryFee').classList.add('opacity-60', 'cursor-not-allowed');
+
         document.getElementById('inputBbFee').value = 'Tiered';
         document.getElementById('inputBbFee').disabled = true;
+        document.getElementById('inputBbFee').classList.add('opacity-60', 'cursor-not-allowed');
+
         document.getElementById('inputHouseCut').value = 20;
         document.getElementById('inputHouseCut').disabled = true;
+        document.getElementById('inputHouseCut').classList.add('opacity-60', 'cursor-not-allowed');
+
         document.getElementById('inputPlacesPaid').disabled = true;
+        document.getElementById('inputPlacesPaid').classList.add('opacity-60', 'cursor-not-allowed');
 
         document.getElementById('labelEntryFee').innerText = 'Paid Main Entry ($350)';
         document.getElementById('labelBigBassFee').innerText = 'Paid Big Bass (Included in Purse)';
@@ -1524,3 +1531,110 @@
 
       const title = document.getElementById('newTournTitle').value.trim();
       const lake = document.getElementById('newTournLake').value.trim();
+      const pin = document.getElementById('newTournPin').value.trim().toUpperCase();
+      const date = document.getElementById('newTournDate').value;
+      const btn = document.getElementById('createTournBtn');
+
+      btn.disabled = true;
+      btn.innerText = 'Adding To Schedule...';
+
+      try {
+        const payload = { 
+          pin, 
+          title, 
+          trail_series: trail,
+          division: division,
+          lake_name: lake, 
+          event_date: date, 
+          is_active: true,
+          entry_fee: isBCT ? 80.00 : isWW ? 350.00 : 150.00,
+          house_retention_pct: isBCT ? 0.00 : isWW ? 20.00 : 10.00
+        };
+
+        if (currentUser) {
+          payload.created_by = currentUser.id;
+        }
+
+        const { data, error } = await client
+          .from('tournaments')
+          .insert([payload])
+          .select()
+          .single();
+
+        btn.disabled = false;
+        btn.innerText = 'Save Event To Schedule & Open';
+
+        if (error) {
+          alert('Failed: ' + error.message);
+          return;
+        }
+
+        closeNewTournamentModal();
+        document.getElementById('newTournTitle').value = '';
+        document.getElementById('newTournPin').value = '';
+        document.getElementById('customDivisionName').value = '';
+        document.getElementById('customDivisionInputBox').classList.add('hidden');
+
+        await loadSchedule();
+        selectTournamentFromSchedule(data.id);
+        alert(`Event "${title}" added to schedule under ${trail}${division ? ` (${division})` : ''}!`);
+
+      } catch (err) {
+        btn.disabled = false;
+        btn.innerText = 'Save Event To Schedule & Open';
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function removeParticipant(id) {
+      if (!confirm('Remove this boat?')) return;
+      
+      if (navigator.onLine && !id.toString().startsWith('local_')) {
+        await client.from('tournament_participants').delete().eq('id', id);
+      }
+
+      participants = participants.filter(p => p.id !== id);
+      
+      if (activeTournament) {
+        let localRoster = JSON.parse(localStorage.getItem(`offline_roster_${activeTournament.id}`) || '[]');
+        localRoster = localRoster.filter(p => p.id !== id);
+        localStorage.setItem(`offline_roster_${activeTournament.id}`, JSON.stringify(localRoster));
+      }
+
+      renderRoster();
+      calculatePurseAndPayout();
+      updateFlightScheduleDisplay();
+      assignSequentialBoatNumber();
+      checkPendingRegistrationsCount();
+    }
+
+    function setupCrossScreenListeners() {
+      client
+        .channel('register-sync')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'tournaments' }, () => {
+          loadSchedule();
+        })
+        .subscribe();
+
+      broadcast.onmessage = (event) => {
+        if (event.data.type === 'ACTIVE_TOURNAMENT_CHANGED') {
+          if (event.data.tournamentId === activeTournament?.id) {
+            loadData();
+          }
+        }
+      };
+    }
+  </script>
+
+  <!-- SERVICE WORKER REGISTRATION -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(() => console.log('Offline service worker registered.'))
+          .catch(err => console.warn('Service worker registration failed:', err));
+      });
+    }
+  </script>
+</body>
+</html>
