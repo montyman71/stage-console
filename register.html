@@ -507,22 +507,44 @@
       return Math.min(1000, tier * 250);
     }
 
-    function computeWeekendWarriorPayouts(totalBoats) {
+    /**
+     * Official AAFL Weekend Warrior Payout Engine
+     * - Entry fee: $350 (80% net payback = $280/boat)
+     * - Field payout: Top 20% of registered boats
+     * - Minimum payout: $450.00 guaranteed
+     * - 1st place target: $100/boat ($10,000 @ 100 boats)
+     */
+    function computeWeekendWarriorPayouts(totalBoats, minPayout = 450.0) {
       if (totalBoats <= 0) return [];
       const netPurse = totalBoats * 350.0 * 0.80;
       const placesPaid = Math.max(1, Math.round(totalBoats * 0.20));
 
       if (placesPaid === 1) return [netPurse];
-      if (placesPaid === 2) {
-        const first = Math.min(netPurse - 350, totalBoats * 100.0);
-        return [first, netPurse - first];
+      if (placesPaid === 2) return [netPurse - minPayout, minPayout];
+
+      const lastPlace = minPayout;
+      const nMid = placesPaid - 2;
+
+      let targetFirst = totalBoats * 100.0;
+      const remForMid = netPurse - targetFirst - lastPlace;
+
+      if (nMid > 0) {
+        let decayWeights = [];
+        for (let i = 0; i < nMid; i++) {
+          decayWeights.push(Math.pow(nMid - i, 1.45));
+        }
+        const sumW = decayWeights.reduce((a, b) => a + b, 0);
+        const est2nd = minPayout + (remForMid - nMid * minPayout) * (decayWeights[0] / sumW);
+        if (est2nd >= targetFirst) {
+          targetFirst = (netPurse - lastPlace) * 0.55;
+        }
       }
 
-      const firstPlace = totalBoats * 100.0;
-      const lastPlace = 350.0;
-      const nMid = placesPaid - 2;
-      const remainingPurse = netPurse - firstPlace - lastPlace;
-      const surplus = remainingPurse - (nMid * 350.0);
+      const maxFirst = netPurse - (placesPaid - 1) * minPayout;
+      const firstPlace = Math.round(Math.min(maxFirst, targetFirst) / 25.0) * 25.0;
+
+      const remPurse = netPurse - firstPlace - lastPlace;
+      const surplus = remPurse - (nMid * minPayout);
 
       let decayWeights = [];
       for (let i = 0; i < nMid; i++) {
@@ -531,8 +553,8 @@
       const weightSum = decayWeights.reduce((a, b) => a + b, 0);
 
       let midPayouts = decayWeights.map(w => {
-        const amount = 350.0 + (surplus * (w / weightSum));
-        return Math.round(amount / 25.0) * 25.0;
+        const val = minPayout + (surplus * (w / weightSum));
+        return Math.round(val / 25.0) * 25.0;
       });
 
       const currentSum = firstPlace + lastPlace + midPayouts.reduce((a, b) => a + b, 0);
@@ -1127,7 +1149,7 @@
 
       } else if (isWeekendWarrior) {
         entryFee = 350.00;
-        document.getElementById('bctRuleTag').innerText = '🔒 WEEKEND WARRIOR (TOP 20% PAID • LAST SPOT GETS $350 BACK)';
+        document.getElementById('bctRuleTag').innerText = '🔒 WEEKEND WARRIOR (TOP 20% PAID • $450 MIN PAYOUT)';
         document.getElementById('bctRuleTag').className = 'text-[10px] font-mono font-bold bg-blue-500/20 text-blue-300 border border-blue-500/40 px-2 py-0.5 rounded';
         document.getElementById('bctRuleTag').classList.remove('hidden');
 
@@ -1145,7 +1167,7 @@
         netMain = totalBoats * 350.00 * 0.80;
         bbPurse = getWeekendWarriorBigBass(totalBoats);
 
-        const dollarPayouts = computeWeekendWarriorPayouts(totalBoats);
+        const dollarPayouts = computeWeekendWarriorPayouts(totalBoats, 450.0);
 
         document.getElementById('fieldCount').innerText = `${totalBoats} Boats`;
         document.getElementById('grossPurse').innerText = `$${((totalBoats * 350) + bbPurse).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
@@ -1177,7 +1199,7 @@
           tr.innerHTML = `
             <td class="py-1">
               ${place === 1 ? '🥇 1st' : place === 2 ? '🥈 2nd' : place === 3 ? '🥉 3rd' : `${place}th`}
-              ${isLast ? '<span class="text-[9px] text-emerald-400 ml-1 font-mono uppercase">(Entry Fee Back)</span>' : ''}
+              ${isLast ? '<span class="text-[9px] text-emerald-400 ml-1 font-mono uppercase">(Min $450 Check)</span>' : ''}
             </td>
             <td class="py-1 text-right text-slate-400 font-mono">${pct}%</td>
             <td class="py-1 text-right font-black font-mono">$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
@@ -1502,110 +1524,3 @@
 
       const title = document.getElementById('newTournTitle').value.trim();
       const lake = document.getElementById('newTournLake').value.trim();
-      const pin = document.getElementById('newTournPin').value.trim().toUpperCase();
-      const date = document.getElementById('newTournDate').value;
-      const btn = document.getElementById('createTournBtn');
-
-      btn.disabled = true;
-      btn.innerText = 'Adding To Schedule...';
-
-      try {
-        const payload = { 
-          pin, 
-          title, 
-          trail_series: trail,
-          division: division,
-          lake_name: lake, 
-          event_date: date, 
-          is_active: true,
-          entry_fee: isBCT ? 80.00 : isWW ? 350.00 : 150.00,
-          house_retention_pct: isBCT ? 0.00 : isWW ? 20.00 : 10.00
-        };
-
-        if (currentUser) {
-          payload.created_by = currentUser.id;
-        }
-
-        const { data, error } = await client
-          .from('tournaments')
-          .insert([payload])
-          .select()
-          .single();
-
-        btn.disabled = false;
-        btn.innerText = 'Save Event To Schedule & Open';
-
-        if (error) {
-          alert('Failed: ' + error.message);
-          return;
-        }
-
-        closeNewTournamentModal();
-        document.getElementById('newTournTitle').value = '';
-        document.getElementById('newTournPin').value = '';
-        document.getElementById('customDivisionName').value = '';
-        document.getElementById('customDivisionInputBox').classList.add('hidden');
-
-        await loadSchedule();
-        selectTournamentFromSchedule(data.id);
-        alert(`Event "${title}" added to schedule under ${trail}${division ? ` (${division})` : ''}!`);
-
-      } catch (err) {
-        btn.disabled = false;
-        btn.innerText = 'Save Event To Schedule & Open';
-        alert('Error: ' + err.message);
-      }
-    }
-
-    async function removeParticipant(id) {
-      if (!confirm('Remove this boat?')) return;
-      
-      if (navigator.onLine && !id.toString().startsWith('local_')) {
-        await client.from('tournament_participants').delete().eq('id', id);
-      }
-
-      participants = participants.filter(p => p.id !== id);
-      
-      if (activeTournament) {
-        let localRoster = JSON.parse(localStorage.getItem(`offline_roster_${activeTournament.id}`) || '[]');
-        localRoster = localRoster.filter(p => p.id !== id);
-        localStorage.setItem(`offline_roster_${activeTournament.id}`, JSON.stringify(localRoster));
-      }
-
-      renderRoster();
-      calculatePurseAndPayout();
-      updateFlightScheduleDisplay();
-      assignSequentialBoatNumber();
-      checkPendingRegistrationsCount();
-    }
-
-    function setupCrossScreenListeners() {
-      client
-        .channel('register-sync')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'tournaments' }, () => {
-          loadSchedule();
-        })
-        .subscribe();
-
-      broadcast.onmessage = (event) => {
-        if (event.data.type === 'ACTIVE_TOURNAMENT_CHANGED') {
-          if (event.data.tournamentId === activeTournament?.id) {
-            loadData();
-          }
-        }
-      };
-    }
-  </script>
-
-  <!-- SERVICE WORKER REGISTRATION -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then(() => console.log('Offline service worker registered.'))
-          .catch(err => console.warn('Service worker registration failed:', err));
-      });
-    }
-  </script>
-</body>
-</html>
