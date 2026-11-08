@@ -42,13 +42,14 @@
       <div>
         <div class="flex items-center gap-2">
           <span class="text-xs font-black uppercase text-amber-400 tracking-widest">American Anglers Fishing League</span>
+          <span id="roleBadge" class="text-[10px] font-mono font-bold px-2 py-0.5 rounded uppercase bg-slate-800 text-slate-400 border border-slate-700">Checking Access...</span>
         </div>
         <h1 class="text-2xl font-black text-white uppercase mt-0.5">Official Angler Membership Roster</h1>
         <p class="text-xs font-mono text-slate-400 mt-1">1-Calendar-Year Active Registry • Series Starting 2027-00001</p>
       </div>
 
       <div class="flex items-center gap-2">
-        <button onclick="openNewMemberModal()" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase rounded-lg shadow-lg transition">
+        <button id="btnAddMember" onclick="openNewMemberModal()" class="hidden px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase rounded-lg shadow-lg transition">
           + Register New Member
         </button>
         <a href="register.html" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-lg border border-slate-700">
@@ -102,7 +103,7 @@
 
   </div>
 
-  <!-- MODAL: ADD NEW MEMBER -->
+  <!-- MODAL: ADD NEW MEMBER (COACH MONTY ONLY) -->
   <div id="newMemberModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
     <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-lg w-full shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b border-slate-800 pb-2">
@@ -154,6 +155,64 @@
 
         <button type="submit" id="saveMemberBtn" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase rounded-lg shadow-lg transition">
           Confirm Membership & Issue Card
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: EDIT MEMBER DETAILS (COACH MONTY ONLY) -->
+  <div id="editMemberModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-lg w-full shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+        <div>
+          <h3 class="text-lg font-black text-white uppercase">Edit Member Record</h3>
+          <p class="text-[11px] text-slate-400 font-mono" id="editMemberIdHeader">ID: 2027-00000</p>
+        </div>
+        <button onclick="closeEditMemberModal()" class="text-slate-500 hover:text-white font-bold">✕</button>
+      </div>
+
+      <form id="editMemberForm" onsubmit="submitEditMember(event)" class="space-y-3">
+        <input type="hidden" id="editRecordId" />
+        <div>
+          <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Full Legal Name</label>
+          <input type="text" id="editFullName" required class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Phone Number</label>
+            <input type="tel" id="editPhone" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm font-mono focus:border-blue-500 focus:outline-none" />
+          </div>
+          <div>
+            <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Email</label>
+            <input type="email" id="editEmail" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2">
+          <div class="col-span-2">
+            <label class="text-xs font-bold uppercase text-slate-400 block mb-1">City</label>
+            <input type="text" id="editCity" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm focus:border-blue-500 focus:outline-none" />
+          </div>
+          <div>
+            <label class="text-xs font-bold uppercase text-slate-400 block mb-1">State</label>
+            <input type="text" id="editState" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-sm uppercase font-mono focus:border-blue-500 focus:outline-none" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 pt-1">
+          <div>
+            <label class="text-xs font-bold uppercase text-slate-400 block mb-1">Joined Date</label>
+            <input type="date" id="editJoinedDate" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-xs font-mono focus:border-blue-500 focus:outline-none" />
+          </div>
+          <div>
+            <label class="text-xs font-bold uppercase text-emerald-400 block mb-1">Expires Date</label>
+            <input type="date" id="editExpiresDate" class="w-full p-2 bg-slate-950 border border-slate-700 rounded-lg text-white text-xs font-mono focus:border-blue-500 focus:outline-none" />
+          </div>
+        </div>
+
+        <button type="submit" id="saveEditBtn" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase rounded-lg shadow-lg transition mt-2">
+          Save Record Changes
         </button>
       </form>
     </div>
@@ -222,8 +281,39 @@
     const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let allMembers = [];
+    let isCoachMonty = false;
 
-    window.addEventListener('DOMContentLoaded', loadMembers);
+    window.addEventListener('DOMContentLoaded', async () => {
+      await checkAuthPermissions();
+      await loadMembers();
+    });
+
+    async function checkAuthPermissions() {
+      try {
+        const { data: { session } } = await client.auth.getSession();
+        const roleBadge = document.getElementById('roleBadge');
+        const btnAdd = document.getElementById('btnAddMember');
+
+        if (session && session.user && session.user.email) {
+          const userEmail = session.user.email.toLowerCase();
+          if (userEmail === 'coachmonty71@gmail.com') {
+            isCoachMonty = true;
+            roleBadge.innerText = '★ COACH MONTY (FULL EDIT)';
+            roleBadge.className = 'text-[10px] font-mono font-bold px-2 py-0.5 rounded uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+            btnAdd.classList.remove('hidden');
+            return;
+          }
+        }
+
+        // Default or other director access: Read-Only
+        isCoachMonty = false;
+        roleBadge.innerText = 'STAFF (READ ONLY)';
+        roleBadge.className = 'text-[10px] font-mono font-bold px-2 py-0.5 rounded uppercase bg-slate-800 text-slate-400 border border-slate-700';
+        btnAdd.classList.add('hidden');
+      } catch (err) {
+        console.warn('Auth check error:', err);
+      }
+    }
 
     async function loadMembers() {
       const { data, error } = await client
@@ -268,7 +358,7 @@
       tbody.innerHTML = '';
 
       if (list.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="py-8 text-center text-slate-500">No members found. Click "+ Register New Member" above.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="py-8 text-center text-slate-500">No members found.</td></tr>';
         document.getElementById('activeCount').innerText = '0';
         document.getElementById('expiredCount').innerText = '0';
         return;
@@ -298,7 +388,7 @@
               class="px-2 py-1 bg-emerald-600/20 border border-emerald-500/40 text-emerald-400 rounded text-[10px] font-bold hover:bg-emerald-600 hover:text-white transition"
               title="Send Card via SMS"
             >
-              💬 SMS Card
+              💬 SMS
             </a>
 
             <button 
@@ -306,16 +396,36 @@
               class="px-2 py-1 bg-blue-600/20 border border-blue-500/40 text-blue-400 rounded text-[10px] font-bold hover:bg-blue-600 hover:text-white transition"
               title="View & Print Card"
             >
-              🪪 View Card
+              🪪 Card
             </button>
 
-            <button 
-              onclick="renewMember('${m.id}')" 
-              class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] font-bold"
-              title="Add 1 Year"
-            >
-              ↻ +1 Yr
-            </button>
+            ${isCoachMonty ? `
+              <button 
+                onclick="openEditMemberModal('${m.id}')" 
+                class="px-2 py-1 bg-amber-600/20 border border-amber-500/40 text-amber-300 rounded text-[10px] font-bold hover:bg-amber-600 hover:text-white transition"
+                title="Edit Member Information"
+              >
+                ✏️ Edit
+              </button>
+
+              <button 
+                onclick="renewMember('${m.id}')" 
+                class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] font-bold"
+                title="Add 1 Year"
+              >
+                ↻ +1 Yr
+              </button>
+
+              <button 
+                onclick="deleteMember('${m.id}', '${m.full_name}')" 
+                class="px-2 py-1 bg-red-950/60 border border-red-700/60 text-red-300 hover:bg-red-800 hover:text-white rounded text-[10px] font-bold transition"
+                title="Delete Member"
+              >
+                🗑️
+              </button>
+            ` : `
+              <span class="text-[10px] font-mono text-slate-500 px-1 italic">Read-Only</span>
+            `}
           </td>
         `;
         tbody.appendChild(tr);
@@ -365,14 +475,93 @@
     }
 
     function openNewMemberModal() {
+      if (!isCoachMonty) {
+        alert('Permission Denied: Only Coach Monty has authorization to issue new member cards.');
+        return;
+      }
       document.getElementById('newMemberModal').classList.remove('hidden');
     }
     function closeNewMemberModal() {
       document.getElementById('newMemberModal').classList.add('hidden');
     }
 
+    function openEditMemberModal(id) {
+      if (!isCoachMonty) {
+        alert('Permission Denied: Only Coach Monty has authorization to edit member records.');
+        return;
+      }
+      const m = allMembers.find(item => item.id === id);
+      if (!m) return;
+
+      document.getElementById('editRecordId').value = m.id;
+      document.getElementById('editMemberIdHeader').innerText = `ID: ${m.member_number}`;
+      document.getElementById('editFullName').value = m.full_name || '';
+      document.getElementById('editPhone').value = m.phone || '';
+      document.getElementById('editEmail').value = m.email || '';
+      document.getElementById('editCity').value = m.city || '';
+      document.getElementById('editState').value = m.state || 'FL';
+      document.getElementById('editJoinedDate').value = m.joined_date || '';
+      document.getElementById('editExpiresDate').value = m.expires_date || '';
+
+      document.getElementById('editMemberModal').classList.remove('hidden');
+    }
+    function closeEditMemberModal() {
+      document.getElementById('editMemberModal').classList.add('hidden');
+    }
+
+    async function submitEditMember(e) {
+      e.preventDefault();
+      if (!isCoachMonty) {
+        alert('Access Denied: Only Coach Monty can edit member records.');
+        return;
+      }
+
+      const id = document.getElementById('editRecordId').value;
+      const fullName = document.getElementById('editFullName').value.trim();
+      const phone = document.getElementById('editPhone').value.trim();
+      const email = document.getElementById('editEmail').value.trim();
+      const city = document.getElementById('editCity').value.trim();
+      const state = document.getElementById('editState').value.trim();
+      const joined = document.getElementById('editJoinedDate').value;
+      const expires = document.getElementById('editExpiresDate').value;
+
+      const btn = document.getElementById('saveEditBtn');
+      btn.disabled = true;
+      btn.innerText = 'Saving Record...';
+
+      const { error } = await client
+        .from('anglers_membership')
+        .update({
+          full_name: fullName,
+          phone: phone || null,
+          email: email || null,
+          city: city || null,
+          state: state || 'FL',
+          joined_date: joined,
+          expires_date: expires
+        })
+        .eq('id', id);
+
+      btn.disabled = false;
+      btn.innerText = 'Save Record Changes';
+
+      if (error) {
+        alert('Update failed: ' + error.message);
+        return;
+      }
+
+      alert('Member record successfully updated.');
+      closeEditMemberModal();
+      await loadMembers();
+    }
+
     async function submitNewMember(e) {
       e.preventDefault();
+      if (!isCoachMonty) {
+        alert('Access Denied: Only Coach Monty can register new members.');
+        return;
+      }
+
       const first = document.getElementById('mFirstName').value.trim();
       const last = document.getElementById('mLastName').value.trim();
       const phone = document.getElementById('mPhone').value.trim();
@@ -410,11 +599,15 @@
       document.getElementById('newMemberForm').reset();
       await loadMembers();
       
-      // Auto-open digital badge for immediate view or SMS
       viewDigitalCard(data.id);
     }
 
     async function renewMember(id) {
+      if (!isCoachMonty) {
+        alert('Access Denied: Only Coach Monty can renew memberships.');
+        return;
+      }
+
       if (!confirm('Add +1 calendar year to this membership?')) return;
       const { data: current } = await client.from('anglers_membership').select('expires_date').eq('id', id).single();
       
@@ -425,7 +618,27 @@
       baseDate.setFullYear(baseDate.getFullYear() + 1);
       const newExp = baseDate.toISOString().split('T')[0];
 
-      await client.from('anglers_membership').update({ expires_date: newExp }).eq('id', id);
+      const { error } = await client.from('anglers_membership').update({ expires_date: newExp }).eq('id', id);
+      if (error) {
+        alert('Renewal error: ' + error.message);
+        return;
+      }
+      loadMembers();
+    }
+
+    async function deleteMember(id, name) {
+      if (!isCoachMonty) {
+        alert('Access Denied: Only Coach Monty can delete member records.');
+        return;
+      }
+
+      if (!confirm(`Are you sure you want to permanently delete member "${name}"?`)) return;
+
+      const { error } = await client.from('anglers_membership').delete().eq('id', id);
+      if (error) {
+        alert('Delete failed: ' + error.message);
+        return;
+      }
       loadMembers();
     }
   </script>
